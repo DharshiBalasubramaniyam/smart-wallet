@@ -3,5 +3,24 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --color-mint-500: oklch(0.72 0.11 178);
+    --color-bg-light-secondary: oklch(0.932 0.032 255.585);
+    --color-bg-dark-secondary: oklch(0.13 0.028 261.692);
+
+    --color-bg-light-primary: #fff;
+    --color-bg-dark-primary: #000;
+
+    --color-text-light-secondary: oklch(0.551 0.027 264.364);
+    --color-text-dark-secondary: oklch(0.707 0.022 261.325);
+
+    --color-text-light-primary: oklch(0.21 0.034 264.665);
+    --color-text-dark-primary: oklch(0.928 0.006 264.531);
+
+    --color-main-light-primary: oklch(0.585 0.233 277.117);
+    --color-hover-light-primary: oklch(0.97 0.014 254.604);
+    --color-border-light-primary: oklch(0.97 0.014 254.604);
+
+    --color-main-dark-primary: oklch(0.585 0.233 277.117);
+    --color-hover-dark-primary: oklch(0.21 0.034 264.665);
+    --color-border-dark-primary: oklch(0.446 0.03 256.802);
+
 }
