@@ -1,8 +1,28 @@
+import { useState } from "react";
 import Button from "../../components/Button";
 import { FacebookIcon, GoogleIcon } from "../../components/icons";
 import Input from "../../components/Input";
+import { toast } from 'react-toastify';
 
 function Login() {
+    const [inputs, setInputs] = useState({ email: "", password: "" })
+
+    const onInputChange = (e) => {
+        const { name, value } = e.target;
+        setInputs(prev => {
+            return { ...prev, [name]: value }
+        });
+    }
+
+    const onSubmit = (e) => {
+        e.preventDefault();
+    }
+
+    const onEmailLogin = () => {
+        if (!validateInputs(inputs)) return;
+        console.log(inputs);
+    }
+
     return (
         <div className="font-main dark">
             <div className="min-h-screen flex fle-col items-center justify-center py-6 px-4 bg-bg-light-secondary dark:bg-bg-dark-secondary">
@@ -15,14 +35,14 @@ function Login() {
                         <p className="text-sm mt-12 text-text-light-secondary dark:text-text-dark-secondary">Don&apos;t have an account? <a href="javascript:void(0);" className="text-primary font-semibold hover:underline ml-1">Register here</a></p>
                     </div>
 
-                    <form className="max-w-md md:ml-auto w-full">
+                    <form className="max-w-md md:ml-auto w-full" onSubmit={onSubmit}>
                         <h3 className="text-text-light-primary dark:text-text-dark-primary text-3xl font-extrabold mb-8">
                             Sign in
                         </h3>
 
                         <div className="space-y-4">
-                            <Input name="email" type="email" placeholder="Email address" />
-                            <Input name="password" type="password" placeholder="Password" />
+                            <Input name="email" type="email" placeholder="Email address" value={inputs.email} onChange={onInputChange} />
+                            <Input name="password" type="password" placeholder="Password" value={inputs.password} onChange={onInputChange} />
                             <div className="text-sm text-right">
                                 <a href="jajvascript:void(0);" className="text-primary hover:underline font-semibold">
                                     Forgot your password?
@@ -31,7 +51,7 @@ function Login() {
                         </div>
 
                         <div className="!mt-8">
-                            <Button text="Log in" />
+                            <Button text="Log in" onClick={onEmailLogin} />
                         </div>
 
                         <div className="my-4 flex items-center gap-4">
@@ -57,3 +77,21 @@ function Login() {
 }
 
 export default Login;
+
+function validateInputs({ email, password }) {
+    if (email.trim() === "") {
+        toast.error("Email is required!")
+        return false;
+    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/g.test(email)) {
+        toast.error("Invalid email address!")
+        return false;
+    }
+
+    if (password.trim() === "") {
+        toast.error("Password is required!")
+        return false;
+    } else if (password.trim().length < 8) {
+        toast.error("Password must have atleast 8 characters!")
+        return false;
+    }
+}

@@ -27,4 +27,7 @@
     --font-main: "Quattrocento Sans", sans-serif;
 
 }
-  
+
+.Toastify__toast {
+    font-family: "Quattrocento Sans", sans-serif;
+}

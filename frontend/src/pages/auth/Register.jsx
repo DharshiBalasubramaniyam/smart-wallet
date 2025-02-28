@@ -1,8 +1,28 @@
+import { useState } from "react";
 import Button from "../../components/Button";
 import { FacebookIcon, GoogleIcon } from "../../components/icons";
 import Input from "../../components/Input";
+import { toast } from 'react-toastify';
 
 function Register() {
+    const [inputs, setInputs] = useState({ username: "", email: "", password: "" })
+
+    const onInputChange = (e) => {
+        const { name, value } = e.target;
+        setInputs(prev => {
+            return { ...prev, [name]: value }
+        });
+    }
+
+    const onSubmit = (e) => {
+        e.preventDefault();
+    }
+
+    const onEmailRegister = () => {
+        if (!validateInputs(inputs)) return;
+        console.log(inputs);
+    }
+
     return (
         <div className="font-main dark">
             <div className="min-h-screen flex fle-col items-center justify-center py-6 px-4 bg-bg-light-secondary dark:bg-bg-dark-secondary">
@@ -15,19 +35,19 @@ function Register() {
                         <p className="text-sm mt-12 text-text-light-secondary dark:text-text-dark-secondary">Already have an account? <a href="javascript:void(0);" className="text-primary font-semibold hover:underline ml-1">Login here</a></p>
                     </div>
 
-                    <form className="max-w-md md:ml-auto w-full">
+                    <form className="max-w-md md:ml-auto w-full" onSubmit={onSubmit}>
                         <h3 className="text-text-light-primary dark:text-text-dark-primary text-3xl font-extrabold mb-5">
                             Create account
                         </h3>
 
                         <div className="space-y-4">
-                            <Input name="username" type="text" placeholder="Username" />
-                            <Input name="email" type="email" placeholder="Email address" />
-                            <Input name="password" type="password" placeholder="Password" />
+                            <Input name="username" type="text" placeholder="Username" value={inputs.username} onChange={onInputChange} />
+                            <Input name="email" type="email" placeholder="Email address" value={inputs.email} onChange={onInputChange} />
+                            <Input name="password" type="password" placeholder="Password" value={inputs.password} onChange={onInputChange} />
                         </div>
 
                         <div className="!mt-8">
-                            <Button text="Create account" />
+                            <Button text="Create account" onClick={onEmailRegister} />
                         </div>
 
                         <div className="my-4 flex items-center gap-4">
@@ -53,3 +73,29 @@ function Register() {
 }
 
 export default Register;
+
+function validateInputs({ username, email, password }) {
+    if (username.trim() === "") {
+        toast.error("Username is required!")
+        return false;
+    } else if (username.trim().length <= 3) {
+        toast.error("Username must have atleast 4 characters!")
+        return false;
+    }
+
+    if (email.trim() === "") {
+        toast.error("Email is required!")
+        return false;
+    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/g.test(email)) {
+        toast.error("Invalid email address!")
+        return false;
+    }
+
+    if (password.trim() === "") {
+        toast.error("Password is required!")
+        return false;
+    } else if (password.trim().length < 8) {
+        toast.error("Password must have atleast 8 characters!")
+        return false;
+    }
+}
