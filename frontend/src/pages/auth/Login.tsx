@@ -5,16 +5,16 @@ import Input from "../../components/Input";
 import { toast } from 'react-toastify';
 
 function Login() {
-    const [inputs, setInputs] = useState({ email: "", password: "" })
+    const [inputs, setInputs] = useState<LoginInfo>({email: "", password: ""});
 
-    const onInputChange = (e) => {
-        const { name, value } = e.target;
+    const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target as HTMLInputElement;
         setInputs(prev => {
             return { ...prev, [name]: value }
         });
     }
 
-    const onSubmit = (e) => {
+    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
     }
 
@@ -78,7 +78,7 @@ function Login() {
 
 export default Login;
 
-function validateInputs({ email, password }) {
+function validateInputs({ email, password }: LoginInfo) {
     if (email.trim() === "") {
         toast.error("Email is required!")
         return false;

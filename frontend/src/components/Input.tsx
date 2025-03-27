@@ -1,5 +1,7 @@
+import { InputProps } from "@/interfaces/props";
+
 // eslint-disable-next-line react/prop-types
-function Input({ name, type, placeholder, value, onChange }) {
+function Input({ name, type, placeholder, value, onChange }: InputProps) {
     return (
         <input
             type={type}

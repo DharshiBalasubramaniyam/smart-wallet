@@ -1,5 +1,7 @@
+import { ButtonProps } from "@/interfaces/props";
+
 // eslint-disable-next-line react/prop-types
-function Button({ text, onClick }) {
+function Button({ text, onClick }: ButtonProps) {
     return (
         <button
             type="button"

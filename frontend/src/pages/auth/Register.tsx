@@ -5,16 +5,16 @@ import Input from "../../components/Input";
 import { toast } from 'react-toastify';
 
 function Register() {
-    const [inputs, setInputs] = useState({ username: "", email: "", password: "" })
+    const [inputs, setInputs] = useState<RegistrationInfo>({ username: "", email: "", password: "" })
 
-    const onInputChange = (e) => {
+    const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setInputs(prev => {
             return { ...prev, [name]: value }
         });
     }
 
-    const onSubmit = (e) => {
+    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
     }
 
@@ -74,7 +74,7 @@ function Register() {
 
 export default Register;
 
-function validateInputs({ username, email, password }) {
+function validateInputs({ username, email, password }: RegistrationInfo) {
     if (username.trim() === "") {
         toast.error("Username is required!")
         return false;
