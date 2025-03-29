@@ -98,4 +98,5 @@ function validateInputs({ username, email, password }: RegistrationInfo) {
         toast.error("Password must have atleast 8 characters!")
         return false;
     }
+    return true;
 }

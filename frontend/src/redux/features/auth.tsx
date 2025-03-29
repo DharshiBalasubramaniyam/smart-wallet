@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars */
+import { AuthState } from "@/interfaces/redux";
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = { email: null, username: null, token: null, isAuthenticated: false }
+const initialState: AuthState = { email: null, username: null, token: null, isAuthenticated: false }
 
 // createSlice allows you to define the Redux state slice in a single function,
 // including the initial state, reducers, and action creators, making it easier to manage state and actions.
@@ -11,13 +12,13 @@ const authSlice = createSlice({
     initialState: initialState, // The initial state of the slice
     // reducer functions are accepting the previous state and the action and return the new state
     reducers: {
-        login(state, action) {
+        login(state, action: {"payload": {username: string, email: string, token: string}}) {
             state.username = action.payload.username;
             state.token = action.payload.token;
             state.email = action.payload.email;
             state.isAuthenticated = true;
         },
-        logout(state, action) {
+        logout(state) {
             state.username = null;
             state.token = null;
             state.email = null;

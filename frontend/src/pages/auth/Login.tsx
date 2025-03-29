@@ -3,9 +3,14 @@ import Button from "../../components/Button";
 import { FacebookIcon, GoogleIcon } from "../../components/icons";
 import Input from "../../components/Input";
 import { toast } from 'react-toastify';
+import { useDispatch } from "react-redux";
+import { login } from "../../redux/features/auth";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
     const [inputs, setInputs] = useState<LoginInfo>({email: "", password: ""});
+    const dispatch = useDispatch()
+    const navigate = useNavigate()
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target as HTMLInputElement;
@@ -19,8 +24,10 @@ function Login() {
     }
 
     const onEmailLogin = () => {
-        if (!validateInputs(inputs)) return;
         console.log(inputs);
+        if (!validateInputs(inputs)) return;
+        dispatch(login({username: inputs.email, email: inputs.email, token: "123" }))
+        navigate("/")
     }
 
     return (
@@ -94,4 +101,5 @@ function validateInputs({ email, password }: LoginInfo) {
         toast.error("Password must have atleast 8 characters!")
         return false;
     }
+    return true;
 }

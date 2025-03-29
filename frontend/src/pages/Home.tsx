@@ -1,28 +1,29 @@
+import { useDispatch, useSelector } from "react-redux"
+import { RootState } from "../redux/store/store"
+import Button from "../components/Button"
+import { Link } from "react-router-dom"
+import { logout } from "../redux/features/auth"
+
 function Home() {
 
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated)
+  const username = useSelector((state: RootState) => state.auth.username)
+  const dispatch = useDispatch()
+
+  function onLogout(): void {
+    dispatch(logout())
+  }
+
   return (
-    <>
-      <div className="bg-bg-light-primary">
-        <h1 className="text-3xl font-bold text-text-light-primary hover:bg-hover-light-primary">Welcome to the Home Page</h1>
-        <div className="bg-bg-light-secondary border-y border-border-light-primary">
-          <h1 className="text-3xl font-bold text-text-light-primary">Welcome to the Home Page</h1>
-          <h1 className="text-2xl font-bold text-main-light-primary">Welcome to the Home Page</h1>
-          <h1 className="text-xl font-bold text-text-light-secondary">Welcome to the Home Page</h1>
-        </div>
-        <h1 className="text-xl font-bold text-text-light-secondary">Welcome to the Home Page</h1>
-      </div>
-
-      <div className="bg-bg-dark-primary">
-        <h1 className="text-3xl font-bold text-text-dark-primary hover:bg-hover-dark-primary">Welcome to the Home Page</h1>
-        <div className="bg-bg-dark-secondary border-y border-border-dark-primary">
-          <h1 className="text-3xl font-bold text-text-dark-primary">Welcome to the Home Page</h1>
-          <h1 className="text-2xl font-bold text-main-dark-primary">Welcome to the Home Page</h1>
-          <h1 className="text-xl font-bold text-text-dark-secondary">Welcome to the Home Page</h1>
-        </div>
-        <h1 className="text-xl font-bold text-text-dark-secondary">Welcome to the Home Page</h1>
-      </div>
-
-    </>
+      isAuthenticated ? (
+        <>
+          <h1>Welcome {username}</h1>
+          <Button text="Logout" onClick={onLogout}></Button>
+        </>
+      ) : (
+        <Link to="/login"><Button text="Login" /></Link>
+        
+      )
   )
 }
 
