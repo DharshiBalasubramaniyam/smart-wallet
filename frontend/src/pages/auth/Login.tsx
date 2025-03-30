@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/features/auth";
 import { useNavigate } from "react-router-dom";
+import { LoginInfo } from "../../interfaces/modals";
 
 function Login() {
     const [inputs, setInputs] = useState<LoginInfo>({email: "", password: ""});

@@ -3,9 +3,12 @@ import Button from "../../components/Button";
 import { FacebookIcon, GoogleIcon } from "../../components/icons";
 import Input from "../../components/Input";
 import { toast } from 'react-toastify';
+import { RegistrationInfo } from "../../interfaces/modals";
+import { AuthService } from "@/services/auth/auth.service";
 
 function Register() {
     const [inputs, setInputs] = useState<RegistrationInfo>({ username: "", email: "", password: "" })
+    const { register } = AuthService();
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -18,9 +21,10 @@ function Register() {
         e.preventDefault();
     }
 
-    const onEmailRegister = () => {
+    const onEmailRegister = async () => {
         if (!validateInputs(inputs)) return;
         console.log(inputs);
+        await register(inputs)
     }
 
     return (

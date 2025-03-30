@@ -23,4 +23,11 @@ const OTPSchema: Schema = new Schema({
 // Index to automatically expire documents
 OTPSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
 
+// Helper methods
+OTPSchema.methods.incrementAttempts = async function(): Promise<void> {
+    this.attempts += 1;
+    this.lastOtpAttemptAt = new Date();
+    await this.save();
+};
+
 export default mongoose.model<IOTP>('OTP', OTPSchema);

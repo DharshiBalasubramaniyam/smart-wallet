@@ -11,7 +11,7 @@ import Subscription, { SubscriptionStatus } from '../models/subscription';
 
 const authRouter = express.Router();
 
-// todo: login
+// todo: loginj
 
 // {
 //     "email": "user@example.com",
@@ -50,23 +50,6 @@ authRouter.post('/register', async (req: Request, res: Response) => {
             blockedUntil: null
         });
 
-        // Generate and save OTP
-        const otpCode = generateOTP();
-        const otpExpiry = new Date();
-        otpExpiry.setMinutes(otpExpiry.getMinutes() + 10); // OTP expires in 10 minutes
-
-        await OTP.create({
-            userId: newUser._id,
-            code: otpCode,
-            description: 'Account verification',
-            expiredAt: otpExpiry,
-            otpAttempts: 1,
-            lastOtpAttemptAt: new Date()
-        });
-
-        // Send OTP email
-        await sendOTPEmail(email, otpCode);
-
         // Remove password from response
         const userResponse = newUser.toObject();
         delete (userResponse as { password?: string }).password;
@@ -74,8 +57,8 @@ authRouter.post('/register', async (req: Request, res: Response) => {
         res.status(201).json({
             success: true,
             data: {
-                user: userResponse,
-                message: 'Please verify your account. An OTP has been sent to your email.'
+                object: userResponse,
+                message: 'Account is created. Please verify your account.'
             },
             error: null
         });
@@ -109,6 +92,27 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
             return;
         }
 
+        if (user.enabled) {
+            res.status(404).json({
+                success: false,
+                error: { message: 'User is already verified. Try login.' },
+                data: null
+            });
+            return;
+        }
+
+        if (user.blockedUntil && user.blockedUntil > new Date()) {
+            const remainingTime = user.blockedUntil!.getTime() - Date.now();
+            const minutesRemaining = Math.ceil(remainingTime / (1000 * 60));
+            res.status(429).json({
+                success: false,
+                error: {
+                    message: `Maximum resend attempts reached. Please try login after ${minutesRemaining} minutes`,
+                },
+                data: null
+            });
+        }
+
         // Find valid OTP
         const otp = await OTP.findOne({
             userId: user._id,
@@ -117,29 +121,16 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
         });
 
         if (!otp) {
-            if (user.blockedUntil && user.blockedUntil > new Date()) {
-                const remainingTime = user.blockedUntil!.getTime() - Date.now();
-                const minutesRemaining = Math.ceil(remainingTime / (1000 * 60));
-                res.status(429).json({
-                    success: false,
-                    error: {
-                        message: `Maximum resend attempts reached. Please try login after ${minutesRemaining} minutes`,
-                    },
-                    data: null
-                });
-            }
-            else {
-                res.status(400).json({
-                    success: false,
-                    error: { message: 'Invalid or expired OTP' },
-                    data: null
-                });
-            }
+            res.status(400).json({
+                success: false,
+                error: { message: 'Invalid or expired OTP' },
+                data: null
+            });
             return;
         }
 
         // Enable user account
-        await User.findByIdAndUpdate(user._id, {
+        const savedUser = await User.findByIdAndUpdate(user._id, {
             enabled: true,
             blockedUntil: null,
         });
@@ -149,7 +140,7 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
 
         res.status(200).json({
             success: true,
-            data: { message: 'Account verified successfully' },
+            data: { message: 'Account verified successfully', object: savedUser },
             error: null
         });
 
@@ -163,8 +154,6 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
     }
 });
 
-// Add after existing routes...
-
 // {
 //     "email": "user@example.com"
 // }
@@ -172,7 +161,6 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
 
-        // Find user
         const user = await User.findOne({ email });
         if (!user) {
             res.status(404).json({
@@ -183,126 +171,121 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
             return;
         }
 
-        // Check if user is already verified
-        if (user.enabled) {
-            res.status(400).json({
-                success: false,
-                error: { message: 'Account is already verified' },
-                data: null
-            });
-            return;
-        }
-
-        // Find existing OTP
         const existingOTP = await OTP.findOne({
             userId: user._id,
             expiredAt: { $gt: new Date() }
         });
 
-        if (existingOTP) {
-            // Check resend attempts
-            if (existingOTP.attempts >= 3) {
-                // Delete used OTP
-                await OTP.deleteOne({ _id: existingOTP._id });
-
-                // Block user for 30 mins
-                const blockedUntil = new Date();
-                blockedUntil.setMinutes(blockedUntil.getMinutes() + 30);
-                await User.findByIdAndUpdate(user._id, {
-                    enabled: false,
-                    blockedUntil: blockedUntil,
-                });
-
-                // Return response
-                const remainingTime = user.blockedUntil!.getTime() - Date.now();
+        // Check if user is blocked
+        if (user.blockedUntil) {
+            if (user.blockedUntil > new Date()) {
+                const remainingTime = user.blockedUntil.getTime() - Date.now();
                 const minutesRemaining = Math.ceil(remainingTime / (1000 * 60));
                 res.status(429).json({
                     success: false,
                     error: {
-                        message: `Maximum resend attempts reached. Please try login after ${minutesRemaining} minutes`,
+                        message: `Too many attempts. Try again after ${minutesRemaining} minutes`,
+                        blockedUntil: user.blockedUntil
                     },
                     data: null
                 });
                 return;
             } else {
-                // Generate new OTP
-                const otpCode = generateOTP();
-                const otpExpiry = new Date();
-                otpExpiry.setMinutes(otpExpiry.getMinutes() + 10);
-
-                // Update existing OTP
-                await OTP.findByIdAndUpdate(existingOTP._id, {
-                    code: otpCode,
-                    expiredAt: otpExpiry,
-                    attempts: existingOTP.attempts + 1,
-                    lastResendAt: new Date()
-                });
-
-                // Send OTP email
-                await sendOTPEmail(email, otpCode);
-
-                res.status(200).json({
-                    success: true,
-                    data: {
-                        message: 'New OTP has been sent to your email',
-                        expiresIn: '10 minutes'
-                    },
-                    error: null
-                });
-                return;
+                user.blockedUntil = undefined;
+                await OTP.deleteOne({ _id: existingOTP?._id });
+                await user.save();
             }
-        } else {
-            if (user.blockedUntil && user.blockedUntil < new Date()) {
-                // Enable user account
-                await User.findByIdAndUpdate(user._id, {
-                    enabled: false,
-                    blockedUntil: null,
-                });
-                // Generate and save OTP
-                const otpCode = generateOTP();
-                const otpExpiry = new Date();
-                otpExpiry.setMinutes(otpExpiry.getMinutes() + 10); // OTP expires in 10 minutes
+        }
 
+        // Generate new OTP code
+        const otpCode = generateOTP();
+        const otpExpiry = new Date();
+        otpExpiry.setMinutes(otpExpiry.getMinutes() + 10);
+
+        if (!existingOTP) {
+            // No existing OTP - create new one
+            await OTP.create({
+                userId: user._id,
+                code: otpCode,
+                description: 'Account verification',
+                expiredAt: otpExpiry,
+                attempts: 1,
+                lastOtpAttemptAt: new Date()
+            });
+        } else {
+            // Check if last request was more than 30 minutes ago
+            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+            if (existingOTP.lastOtpAttemptAt && existingOTP.lastOtpAttemptAt < thirtyMinutesAgo) {
+                // Delete old OTP and create new one
+                await OTP.deleteOne({ _id: existingOTP._id });
                 await OTP.create({
                     userId: user._id,
                     code: otpCode,
                     description: 'Account verification',
                     expiredAt: otpExpiry,
-                    otpAttempts: 1,
+                    attempts: 1,
                     lastOtpAttemptAt: new Date()
                 });
-
-                // Send OTP email
-                await sendOTPEmail(email, otpCode);
-                res.status(201).json({
-                    success: true,
-                    data: {
-                        message: 'Please verify your account. An OTP has been sent to your email.'
-                    },
-                    error: null
+            } else if (existingOTP.attempts < 3) {
+                // Increment attempts and update OTP
+                await OTP.findByIdAndUpdate(existingOTP._id, {
+                    code: otpCode,
+                    expiredAt: otpExpiry,
+                    $inc: { attempts: 1 },
+                    lastOtpAttemptAt: new Date()
                 });
             } else {
-                res.status(401).json({
-                    success: false,
-                    data: null,
-                    error: {message: "Account is not blocked but got resend otp request!"}
+                // Block user after 3 attempts
+                const blockUntil = new Date();
+                blockUntil.setMinutes(blockUntil.getMinutes() + 30);
+
+                await User.findByIdAndUpdate(user._id, {
+                    blockedUntil: blockUntil,
+                    enabled: false
                 });
+
+                await OTP.deleteOne({ _id: existingOTP._id });
+
+                res.status(429).json({
+                    success: false,
+                    error: {
+                        message: 'Too many attempts. Try again after 30 minutes',
+                        blockedUntil: blockUntil
+                    },
+                    data: null
+                });
+                return;
             }
         }
-        res.status(400).json({
-            success: false,
-            error: { message: 'No existing OTP found!' },
-            data: null
+
+        // Send OTP email
+        await sendOTPEmail(email, otpCode);
+
+        const currentOTP = await OTP.findOne({ userId: user._id });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                message: 'New OTP has been sent to your email',
+                object: {
+                    attemptsRemaining: 3 - currentOTP!.attempts,
+                    expiresIn: '10 minutes'
+                }
+            },
+            error: null
         });
+
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         res.status(500).json({
             success: false,
-            error: { message: 'Error resending OTP: ' + errorMessage },
+            error: { message: 'Error sending OTP: ' + errorMessage },
             data: null
         });
     }
 });
+
 
 // {
 //     "email": "user@example.com",
@@ -345,7 +328,7 @@ authRouter.post('/payments', async (req: Request, res: Response) => {
 
         res.status(201).json({
             success: true,
-            data: { payment },
+            data: { message: 'Payment is successfull', object: payment },
             error: null
         });
 
@@ -440,7 +423,7 @@ authRouter.post('/subscriptions', async (req: Request, res: Response) => {
 
         res.status(201).json({
             success: true,
-            data: { subscription },
+            data: { object: subscription, message: 'Subscription is successfull' },
             error: null
         });
 
@@ -529,7 +512,7 @@ authRouter.post('/subscriptions/:subscriptionId/activate', async (req: Request, 
         res.status(200).json({
             success: true,
             data: {
-                subscription: activatedSubscription,
+                object: activatedSubscription,
                 message: 'Subscription activated successfully'
             },
             error: null
@@ -599,7 +582,7 @@ authRouter.patch('/subscriptions/:subscriptionId/cancel', async (req: Request, r
         res.status(200).json({
             success: true,
             data: {
-                subscription: updatedSubscription,
+                object: updatedSubscription,
                 message: 'Subscription cancelled successfully'
             },
             error: null
@@ -654,7 +637,7 @@ authRouter.patch('/update-currency', async (req: Request, res: Response) => {
         res.status(200).json({
             success: true,
             data: {
-                user: updatedUser,
+                object: updatedUser,
                 message: 'Currency updated successfully'
             },
             error: null
