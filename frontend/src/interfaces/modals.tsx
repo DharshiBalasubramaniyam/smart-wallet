@@ -15,7 +15,7 @@ export interface SendOtpRequest {
 
 export interface verifyOtpRequest {
     email: string,
-    otp: string;
+    otpCode: string;
 }
 
 export interface ApiResponse {

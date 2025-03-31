@@ -116,7 +116,7 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
         // Find valid OTP
         const otp = await OTP.findOne({
             userId: user._id,
-            code: otpCode,
+            code: otpCode.toString(),
             expiredAt: { $gt: new Date() }
         });
 

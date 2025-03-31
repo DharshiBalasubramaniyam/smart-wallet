@@ -21,7 +21,7 @@ function OTPVerification() {
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!validateOTP(otp) || !email) return;
-        await verifyOTP({email: email, otp: otp}, "/plans")
+        await verifyOTP({email: email, otpCode: otp}, "/plans")
         console.log("OTP:", otp);
     };
 
