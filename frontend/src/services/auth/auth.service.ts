@@ -4,7 +4,7 @@ import { ApiResponse, RegistrationInfo, SendOtpRequest, verifyOtpRequest } from 
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setEmail, setOTPAttemptsRemaining } from '@/redux/features/auth';
+import { setEmail, setOTPAttemptsRemaining } from '../../redux/features/auth';
 
 const api = axios.create(API_CONFIG);
 
@@ -14,7 +14,7 @@ export function AuthService() {
 
     async function register(body: RegistrationInfo): Promise<void> {
         const response = await api.post(`auth/register`, body);
-        const { message, data } = processResponse(response);
+        const { message, data } = processResponse(response.data);
         if (data) {
             dispatch(setEmail({ email: data.email }))
             await sendOTP({ email: data.email })
@@ -23,7 +23,7 @@ export function AuthService() {
 
     async function sendOTP(body: SendOtpRequest): Promise<void> {
         const sendOtpResponse = await api.post(`auth/resend-otp`, body);
-        const { message, data } = processResponse(sendOtpResponse);
+        const { message, data } = processResponse(sendOtpResponse.data);
         if (data) {
             dispatch(setOTPAttemptsRemaining({ OTPAttemptsRemaining: data.attemptsRemaining }))
             navigate("/verify-otp");
@@ -33,7 +33,7 @@ export function AuthService() {
 
     async function verifyOTP(body: verifyOtpRequest, navigateTo: string): Promise<void> {
         const verifyOtpResponse = await api.post(`auth/verify-otp`, body);
-        const { message, data } = processResponse(verifyOtpResponse);
+        const { message, data } = processResponse(verifyOtpResponse.data);
         if (data) {
             dispatch(setOTPAttemptsRemaining({ OTPAttemptsRemaining: 3 }))
             navigate(navigateTo)

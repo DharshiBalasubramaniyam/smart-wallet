@@ -2,24 +2,26 @@ import { useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import { toast } from 'react-toastify';
-import { AuthService } from "@/services/auth/auth.service";
+import { AuthService } from "../../services/auth/auth.service";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store/store";
+import { RootState } from "../../redux/store/store";
 
 function OTPVerification() {
     const [otp, setOtp] = useState<string>("");
-    const {sendOTP} = AuthService();
+    const {sendOTP, verifyOTP} = AuthService();
     const email = useSelector((state: RootState) => state.auth.email);
     const OTPAttemptsRemaining = useSelector((state: RootState) => state.auth.OTPAttemptsRemaining);
+    console.log(OTPAttemptsRemaining);
 
     const handleResend = async () => {
-        await sendOTP({email: email ?? ""})
+        if (!email) return;
+        await sendOTP({email: email})
     };
 
-    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!validateOTP(otp)) return;
-        // Add your OTP verification logic here
+        if (!validateOTP(otp) || !email) return;
+        await verifyOTP({email: email, otp: otp}, "/plans")
         console.log("OTP:", otp);
     };
 
@@ -62,8 +64,8 @@ function OTPVerification() {
                                     <button 
                                         type="button"
                                         onClick={handleResend}
-                                        disabled={OTPAttemptsRemaining > 0}
-                                        className={`text-sm 'text-primary hover:underline cursor-pointer'}`}
+                                        disabled={OTPAttemptsRemaining < 0}
+                                        className={`text-sm 'text-primary hover:underline cursor-pointer text-primary font-semibold'}`}
                                     >
                                         Resend Code
                                     </button>

@@ -4,7 +4,7 @@ import { FacebookIcon, GoogleIcon } from "../../components/icons";
 import Input from "../../components/Input";
 import { toast } from 'react-toastify';
 import { RegistrationInfo } from "../../interfaces/modals";
-import { AuthService } from "@/services/auth/auth.service";
+import { AuthService } from "../../services/auth/auth.service";
 
 function Register() {
     const [inputs, setInputs] = useState<RegistrationInfo>({ username: "", email: "", password: "" })
