@@ -34,11 +34,7 @@ export const processSubscriptionRenewal = async (subscription: any) => {
         // Calculate new dates
         const startDate = new Date();
         const endDate = new Date();
-        if (plan.billingCycle === 'MONTHLY') {
             endDate.setMonth(endDate.getMonth() + 1);
-        } else if (plan.billingCycle === 'YEARLY') {
-            endDate.setFullYear(endDate.getFullYear() + 1);
-        }
 
         // Process payment here (integrate with payment gateway)
         // const paymentResult = await processPayment(payment, plan.price);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { PlanInfo } from '@/interfaces/modals';
-import { AuthService } from '@/services/auth/auth.service';
+import { PlanInfo } from '../interfaces/modals';
+import { AuthService } from '../services/auth/auth.service';
 
 const Plans: React.FC = () => {
     const [plans, setPlans] = useState<PlanInfo[]>([]);

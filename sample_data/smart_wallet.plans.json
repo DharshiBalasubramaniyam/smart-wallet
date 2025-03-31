@@ -1,0 +1,33 @@
+[{
+  "_id": {
+    "$oid": "67ea5f644189c515fdc14344"
+  },
+  "name": "Starter",
+  "price": 0,
+  "currency": "LKR",
+  "description": "free version",
+  "features": [],
+  "active": true
+},
+{
+  "_id": {
+    "$oid": "67ea5f644189c515fdc14345"
+  },
+  "name": "Plus",
+  "price": 49,
+  "currency": "LKR",
+  "description": "paid version",
+  "features": [],
+  "active": true
+},
+{
+  "_id": {
+    "$oid": "67ea5f644189c515fdc14346"
+  },
+  "name": "Pro",
+  "price": 99,
+  "currency": "LKR",
+  "description": "paid version",
+  "features": [],
+  "active": true
+}]
