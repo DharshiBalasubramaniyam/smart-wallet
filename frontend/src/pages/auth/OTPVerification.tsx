@@ -1,30 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import { toast } from 'react-toastify';
+import { AuthService } from "@/services/auth/auth.service";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 
 function OTPVerification() {
     const [otp, setOtp] = useState<string>("");
-    const [timer, setTimer] = useState<number>(60);
-    const [canResend, setCanResend] = useState<boolean>(false);
+    const {sendOTP} = AuthService();
+    const email = useSelector((state: RootState) => state.auth.email);
+    const OTPAttemptsRemaining = useSelector((state: RootState) => state.auth.OTPAttemptsRemaining);
 
-    useEffect(() => {
-        if (timer > 0) {
-            const interval = setInterval(() => {
-                setTimer((prev) => prev - 1);
-            }, 1000);
-            return () => clearInterval(interval);
-        } else {
-            setCanResend(true);
-        }
-    }, [timer]);
-
-    const handleResend = () => {
-        if (!canResend) return;
-        // Add your resend OTP logic here
-        setTimer(60);
-        setCanResend(false);
-        toast.info("OTP has been resent to your email");
+    const handleResend = async () => {
+        await sendOTP({email: email ?? ""})
     };
 
     const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -68,21 +57,20 @@ function OTPVerification() {
                         </div>
 
                         <div className="mt-4 flex items-center justify-between">
-                            <button 
-                                type="button"
-                                onClick={handleResend}
-                                disabled={!canResend}
-                                className={`text-sm ${canResend 
-                                    ? 'text-primary hover:underline cursor-pointer' 
-                                    : 'text-text-light-secondary dark:text-text-dark-secondary cursor-not-allowed'}`}
-                            >
-                                Resend Code
-                            </button>
-                            {!canResend && (
-                                <span className="text-sm text-text-light-secondary dark:text-text-dark-secondary">
-                                    {`${Math.floor(timer / 60)}:${(timer % 60).toString().padStart(2, '0')}`}
-                                </span>
-                            )}
+                            {
+                                OTPAttemptsRemaining > 0 ? (
+                                    <button 
+                                        type="button"
+                                        onClick={handleResend}
+                                        disabled={OTPAttemptsRemaining > 0}
+                                        className={`text-sm 'text-primary hover:underline cursor-pointer'}`}
+                                    >
+                                        Resend Code
+                                    </button>
+                                ) : (
+                                    <p className="text-center text-sm">You have reached maxium number of attempts. Please try again after some time.</p>
+                                )
+                            }
                         </div>
                     </form>
                 </div>

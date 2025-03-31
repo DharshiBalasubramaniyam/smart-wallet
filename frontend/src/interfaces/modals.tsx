@@ -20,6 +20,6 @@ export interface verifyOtpRequest {
 
 export interface ApiResponse {
     success: boolean,
-    error?: {message: string} | null, 
-    data?: {message: string, object?: any} | null
+    error: {message: string} | null, 
+    data: {message: string, object?: any} | null
 }

@@ -11,7 +11,7 @@ import Subscription, { SubscriptionStatus } from '../models/subscription';
 
 const authRouter = express.Router();
 
-// todo: loginj
+// todo: login
 
 // {
 //     "email": "user@example.com",
