@@ -18,7 +18,20 @@ export interface verifyOtpRequest {
     otpCode: string;
 }
 
+export enum PlanType {
+    STARTER = "Starter",
+    PLUS = "Plus",
+    PRO = "Pro"
+}
+
+export interface SubscribeRequest {
+    email: string;
+    planId: string;
+    autoRenew: boolean;
+}
+
 export interface PlanInfo {
+    _id: string;
     name: string;
     description: string;
     price: number;

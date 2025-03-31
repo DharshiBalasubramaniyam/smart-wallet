@@ -1,6 +1,6 @@
 import axios from 'axios';
 import API_CONFIG from '../../config/api.config';
-import { ApiResponse, PlanInfo, RegistrationInfo, SendOtpRequest, verifyOtpRequest } from '@/interfaces/modals';
+import { ApiResponse, PlanInfo, PlanType, RegistrationInfo, SendOtpRequest, SubscribeRequest, verifyOtpRequest } from '../../interfaces/modals';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -62,7 +62,22 @@ export function AuthService() {
         }
     }
 
-    return { register, sendOTP, verifyOTP, getAllPlans };
+    async function subscribePlan(body: SubscribeRequest, planName: string): Promise<void> {
+        try {
+            const response = await api.post(`auth/subscriptions/subscribe`, body);
+            if (response.data.success) {
+                if (planName === PlanType.STARTER) {
+                    navigate('/settings/currency');
+                } else {
+                    navigate(`/subscriptions/${response.data.data.object._id}/payment`);
+                }
+            }
+        } catch (error) {
+            processError(error);
+        }
+    }
+
+    return { register, sendOTP, verifyOTP, getAllPlans, subscribePlan };
 }
 
 function processError(error: unknown): void {

@@ -5,7 +5,7 @@ import OTP from '../models/otp';
 import { CreateAccountRequest, CreateSubscriptionRequest, SavePaymentRequest, UpdateCurrencyRequest, VerifyOTPRequest } from '../interfaces/requests';
 import { generateOTP } from '../utils/otp.util';
 import { sendOTPEmail } from '../services/email.service';
-import Plan from '../models/plan';
+import Plan, { PlanType } from '../models/plan';
 import Payment from '../models/payment';
 import Subscription, { SubscriptionStatus } from '../models/subscription';
 
@@ -351,9 +351,10 @@ authRouter.post('/payments', async (req: Request, res: Response) => {
 //     "paymentId": "payment_id_here"
 //     "autoRenew": "true"
 // }
-authRouter.post('/subscriptions', async (req: Request, res: Response) => {
+authRouter.post('/subscriptions/subscribe', async (req: Request, res: Response) => {
     try {
-        const { email, planId, paymentId, autoRenew }: CreateSubscriptionRequest = req.body;
+        // TODO: check auto renew, for now it is false
+        const { email, planId, autoRenew }: CreateSubscriptionRequest = req.body;
 
         const user = await User.findOne({ email });
         if (!user) {
@@ -393,26 +394,17 @@ authRouter.post('/subscriptions', async (req: Request, res: Response) => {
             return;
         }
 
-        const payment = await Payment.findById(paymentId);
-        if (!payment || !payment.isValid) {
-            res.status(400).json({
-                success: false,
-                error: { message: 'Invalid payment method' },
-                data: null
-            });
-            return;
-        }
-
         const startDate = new Date();
         const endDate = new Date();
-
         // Set end date based on billing cycle
-        endDate.setMonth(endDate.getMonth() + 1);
+        if (plan.name !== PlanType.STARTER) {
+            endDate.setMonth(endDate.getMonth() + 1);
+        }
 
         const subscription = await Subscription.create({
             userId: user._id,
             planId: plan._id,
-            paymentId: payment._id,
+            paymentId: null,
             startDate,
             endDate,
             lastBillingDate: startDate,
