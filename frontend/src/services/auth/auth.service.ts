@@ -13,47 +13,51 @@ export function AuthService() {
     const dispatch = useDispatch();
 
     async function register(body: RegistrationInfo): Promise<void> {
-        const response = await api.post(`auth/register`, body);
-        const { message, data } = processResponse(response.data);
-        if (data) {
-            dispatch(setEmail({ email: data.email }))
-            await sendOTP({ email: data.email })
+        try {
+            const response = await api.post(`auth/register`, body);
+            if (response.data.success) {
+                dispatch(setEmail({ email: response.data.data.object.email }))
+                await sendOTP({ email: response.data.data.object.email })
+            }
+        } catch (error) {
+            processError(error);
         }
     }
 
     async function sendOTP(body: SendOtpRequest): Promise<void> {
-        const sendOtpResponse = await api.post(`auth/resend-otp`, body);
-        const { message, data } = processResponse(sendOtpResponse.data);
-        if (data) {
-            dispatch(setOTPAttemptsRemaining({ OTPAttemptsRemaining: data.attemptsRemaining }))
-            navigate("/verify-otp");
-            toast.info("Verification OTP has been sent to your email");
+        try {
+            const response = await api.post(`auth/resend-otp`, body);
+            if (response.data.success) {
+                dispatch(setOTPAttemptsRemaining({ OTPAttemptsRemaining: response.data.data.object.attemptsRemaining }))
+                navigate("/verify-otp");
+                toast.info("Verification OTP has been sent to your email");
+            }
+        } catch (error) {
+            processError(error);
         }
     }
 
     async function verifyOTP(body: verifyOtpRequest, navigateTo: string): Promise<void> {
-        const verifyOtpResponse = await api.post(`auth/verify-otp`, body);
-        const { message, data } = processResponse(verifyOtpResponse.data);
-        if (data) {
-            dispatch(setOTPAttemptsRemaining({ OTPAttemptsRemaining: 3 }))
-            navigate(navigateTo)
+        try {
+            const response = await api.post(`auth/verify-otp`, body);
+            if (response.data.success) {
+                dispatch(setOTPAttemptsRemaining({ OTPAttemptsRemaining: 3 }))
+                navigate(navigateTo)
+            }
+        } catch (error) {
+            processError(error)
         }
     }
 
     return { register, sendOTP, verifyOTP };
 }
 
-export function processResponse(response: any): { message: string, data: any } {
-    console.log("Response: ", response);
-    if (typeof response === "object" && "success" in response) {
-        const apiRes = response as ApiResponse;
-        if (apiRes.success) {
-            return { message: apiRes.data?.message ?? "", data: apiRes.data?.object };;
-        }
-        toast.error(apiRes.error?.message);
-        return { message: "", data: undefined };
+function processError(error: unknown): void {
+    if (axios.isAxiosError(error) && error.response) {
+        const errorMessage = error.response.data?.error?.message || "An error occurred while processing your request.";
+        toast.error(errorMessage);
     } else {
-        toast.error("Internal server error!");
-        return { message: "", data: undefined };
+        toast.error("An unexpected error occurred. Please try again later.");
     }
+    console.error("Error details:", error);
 }

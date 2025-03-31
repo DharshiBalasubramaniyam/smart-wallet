@@ -120,6 +120,9 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
             expiredAt: { $gt: new Date() }
         });
 
+        console.log("otp: ", otp?.code);
+        console.log("date: ", new Date());
+
         if (!otp) {
             res.status(400).json({
                 success: false,
