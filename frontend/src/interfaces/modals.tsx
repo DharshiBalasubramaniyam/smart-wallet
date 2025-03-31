@@ -18,6 +18,15 @@ export interface verifyOtpRequest {
     otpCode: string;
 }
 
+export interface PlanInfo {
+    name: string;
+    description: string;
+    price: number;
+    currency: string;
+    features: string[];
+    active: boolean;
+}
+
 export interface ApiResponse {
     success: boolean,
     error: {message: string} | null, 

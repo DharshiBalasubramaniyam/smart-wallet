@@ -6,15 +6,39 @@ export enum BillingCycle {
 }
 
 export enum PlanType {
-    STARTER = "STARTER",
-    PLUS = "PLUS",
-    PRO = "PRO"
+    STARTER = "Starter",
+    PLUS = "Plus",
+    PRO = "Pro"
 }
 
+// {
+//     name: "Starter"
+//     price: 0
+//     currency: "LKR"
+//     description: "free version";
+//     features: [];
+//     active: true;
+// },
+// {
+//     name: "Plus"
+//     price: 49
+//     currency: "LKR"
+//     description: "paid version";
+//     features: [];
+//     active: true;
+// },
+// {
+//     name: "Pro"
+//     price: 99
+//     currency: "LKR"
+//     description: "paid version";
+//     features: [];
+//     active: true;
+// }
 export interface IPlan extends Document {
+    _id: string;
     name: PlanType;
     description: string;
-    billingCycle: BillingCycle;
     price: number;
     currency: string;
     features: string[];
@@ -23,9 +47,9 @@ export interface IPlan extends Document {
 
 const PlanSchema: Schema = new Schema({
     name: { type: String, required: true },
-    description: { type: String, required: true },
+    description: { type: String },
     billingCycle: { type: String, enum: Object.values(BillingCycle), required: true },
-    price: { type: Number, required: true },
+    price: { type: Number },
     currency: { type: String, default: 'USD' },
     features: [{ type: String }],
     active: { type: Boolean, default: true }

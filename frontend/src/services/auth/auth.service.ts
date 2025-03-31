@@ -1,6 +1,6 @@
 import axios from 'axios';
 import API_CONFIG from '../../config/api.config';
-import { ApiResponse, RegistrationInfo, SendOtpRequest, verifyOtpRequest } from '@/interfaces/modals';
+import { ApiResponse, PlanInfo, RegistrationInfo, SendOtpRequest, verifyOtpRequest } from '@/interfaces/modals';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -49,7 +49,20 @@ export function AuthService() {
         }
     }
 
-    return { register, sendOTP, verifyOTP };
+    async function getAllPlans(): Promise<PlanInfo[]> {
+        try {
+            const response = await api.get(`auth/plans`);
+            if (response.data.success) {
+                return response.data.data.object as PlanInfo[];
+            }
+            return []
+        } catch (error) {
+            processError(error)
+            return []
+        }
+    }
+
+    return { register, sendOTP, verifyOTP, getAllPlans };
 }
 
 function processError(error: unknown): void {
