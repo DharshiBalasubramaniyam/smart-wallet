@@ -3,7 +3,7 @@ import SideBarItem from "./SideBarItem";
 import { logout } from "../../redux/features/auth";
 import { useNavigate } from "react-router-dom";
 import SidebarDropdownItem from "./SideBarDropDownItem";
-import { DashBoardIcon } from "../icons";
+import { BudgetIcon, CategoryIcon, DashBoardIcon, GoalIcon, LogoutIcon, NotificationIcon, ScheduleIcon, SettingsIcon, SpaceIcon, TransactionIcon } from "../icons";
 
 export enum UserPortalView {
    DASHBOARD = "dashboard",
@@ -36,18 +36,18 @@ function SideBar({ isSideBarOpen, view }: { isSideBarOpen: boolean, view: UserPo
          <div className="h-full px-3 pb-4 overflow-y-auto bg-bg-light-primary dark:bg-bg-dark-primary">
             <ul className="space-y-2 font-medium">
                <SideBarItem name={UserPortalView.DASHBOARD} isActive={view == UserPortalView.DASHBOARD} Icon={DashBoardIcon} />
-               <SideBarItem name={UserPortalView.TRANSACTIONS} isActive={view == UserPortalView.TRANSACTIONS} Icon={DashBoardIcon} />
-               <SideBarItem name={UserPortalView.SPACES} isActive={view == UserPortalView.SPACES} Icon={DashBoardIcon} />
-               <SideBarItem name={UserPortalView.SCHEDULES} isActive={view == UserPortalView.SCHEDULES} Icon={DashBoardIcon} />
-               <SideBarItem name={UserPortalView.BUDGETS} isActive={view == UserPortalView.BUDGETS} Icon={DashBoardIcon} />
-               <SideBarItem name={UserPortalView.GOALS} isActive={view == UserPortalView.GOALS} Icon={DashBoardIcon} />
-               <SideBarItem name={UserPortalView.CATEGORIES} isActive={view == UserPortalView.CATEGORIES} Icon={DashBoardIcon} />
-               <SideBarItem name={UserPortalView.NOTIFICATIONS} isActive={view == UserPortalView.NOTIFICATIONS} pc={5} Icon={DashBoardIcon} />
-               <SidebarDropdownItem name={UserPortalView.SETTINGS} Icon={DashBoardIcon}>
+               <SideBarItem name={UserPortalView.TRANSACTIONS} isActive={view == UserPortalView.TRANSACTIONS} Icon={TransactionIcon} />
+               <SideBarItem name={UserPortalView.SPACES} isActive={view == UserPortalView.SPACES} Icon={SpaceIcon} />
+               <SideBarItem name={UserPortalView.SCHEDULES} isActive={view == UserPortalView.SCHEDULES} Icon={ScheduleIcon} />
+               <SideBarItem name={UserPortalView.BUDGETS} isActive={view == UserPortalView.BUDGETS} Icon={BudgetIcon} />
+               <SideBarItem name={UserPortalView.GOALS} isActive={view == UserPortalView.GOALS} Icon={GoalIcon} />
+               <SideBarItem name={UserPortalView.CATEGORIES} isActive={view == UserPortalView.CATEGORIES} Icon={CategoryIcon} />
+               <SideBarItem name={UserPortalView.NOTIFICATIONS} isActive={view == UserPortalView.NOTIFICATIONS} pc={5} Icon={NotificationIcon} />
+               <SidebarDropdownItem name={UserPortalView.SETTINGS} Icon={SettingsIcon}>
                   <SideBarItem name={UserPortalView.SETTINGS_PROFILE} isActive={view == UserPortalView.SETTINGS_PROFILE} />
                   <SideBarItem name={UserPortalView.SETTINGS_BILLING} isActive={view == UserPortalView.SETTINGS_BILLING} />
                </SidebarDropdownItem>
-               <SideBarItem name={UserPortalView.LOGOUT} isActive={view == UserPortalView.LOGOUT} onClick={onLogout} Icon={DashBoardIcon} />
+               <SideBarItem name={UserPortalView.LOGOUT} isActive={view == UserPortalView.LOGOUT} onClick={onLogout} Icon={LogoutIcon} />
             </ul>
          </div>
       </aside>
