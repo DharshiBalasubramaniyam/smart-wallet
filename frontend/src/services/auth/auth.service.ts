@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess, setEmail, setOTPAttemptsRemaining } from '../../redux/features/auth';
+import { UserPortalView } from '../../components/user.portal/SideBar';
 
 const api = axios.create(API_CONFIG);
 
@@ -111,7 +112,7 @@ export function AuthService() {
                 dispatch(loginSuccess(userData))
                 localStorage.setItem("smart-wallet-user", JSON.stringify(userData));
                 toast.success("Login successful!");
-                navigate("/");
+                navigate(`/user-portal/${UserPortalView.DASHBOARD}`);
             }
         } catch (error) {
             // TODO: Catch different login error types: account not verified, subscription not found etc.
