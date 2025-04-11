@@ -14,10 +14,10 @@ import { RootState } from "@/redux/store/store";
 
 // TODO: Check login with social media
 function Login() {
-    const [inputs, setInputs] = useState<LoginInfo>({email: "", password: ""});
+    const [inputs, setInputs] = useState<LoginInfo>({ email: "", password: "" });
     const [fetchingUserData, setFetchingUserData] = useState<boolean>(true)
     const [loggingIn, setLoggingIn] = useState<boolean>(false)
-    const {login} = AuthService()
+    const { login } = AuthService()
     const authState = useSelector((state: RootState) => state.auth)
     const dispath = useDispatch()
     const navigate = useNavigate()
