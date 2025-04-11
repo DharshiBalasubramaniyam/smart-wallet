@@ -32,7 +32,10 @@ const Plans: React.FC = () => {
     }
 
     async function handlePlanSelection(plan: PlanInfo): Promise<void> {
-        if (!email) return;
+        if (!email) {
+            console.log("Email not found in state.");
+            return;
+        };
         await subscribePlan({autoRenew: false, email: email, planId: plan._id}, plan.name);
     }
 

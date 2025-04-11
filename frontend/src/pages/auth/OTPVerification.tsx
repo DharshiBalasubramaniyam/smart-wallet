@@ -5,12 +5,17 @@ import { toast } from 'react-toastify';
 import { AuthService } from "../../services/auth/auth.service";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux/store/store";
+import LoadingButton from "../../components/LoadingButton";
+
+// TODO: Check loading when resend otp
+// Check number of OTP attempts
 
 function OTPVerification() {
     const [otp, setOtp] = useState<string>("");
     const {sendOTP, verifyOTP} = AuthService();
     const email = useSelector((state: RootState) => state.auth.email);
     const OTPAttemptsRemaining = useSelector((state: RootState) => state.auth.OTPAttemptsRemaining);
+    const [loading, setLoading] = useState(false);
     console.log(OTPAttemptsRemaining);
 
     const handleResend = async () => {
@@ -21,7 +26,9 @@ function OTPVerification() {
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!validateOTP(otp) || !email) return;
+        setLoading(true);
         await verifyOTP({email: email, otpCode: otp}, "/plans")
+        setLoading(false);
         console.log("OTP:", otp);
     };
 
@@ -55,7 +62,9 @@ function OTPVerification() {
                         </div>
 
                         <div className="!mt-8">
-                            <Button text="Verify OTP" type="submit" />
+                            {
+                                loading ? <LoadingButton text="Verifying..." /> : <Button text="Verify OTP" type="submit" />
+                            }
                         </div>
 
                         <div className="mt-4 flex items-center justify-between">

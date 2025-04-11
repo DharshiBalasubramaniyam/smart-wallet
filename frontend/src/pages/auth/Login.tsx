@@ -1,17 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../../components/Button";
 import { FacebookIcon, GoogleIcon } from "../../components/icons";
 import Input from "../../components/Input";
 import { toast } from 'react-toastify';
-import { useDispatch } from "react-redux";
-import { login } from "../../redux/features/auth";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LoginInfo } from "../../interfaces/modals";
+import { AuthService } from "../../services/auth/auth.service";
+import { useDispatch, useSelector } from "react-redux";
+import { loginSuccess } from "../../redux/features/auth";
+import LoadingButton from "../../components/LoadingButton";
+import { RootState } from "@/redux/store/store";
 
+
+// TODO: Check login with social media
 function Login() {
     const [inputs, setInputs] = useState<LoginInfo>({email: "", password: ""});
-    const dispatch = useDispatch()
+    const [fetchingUserData, setFetchingUserData] = useState<boolean>(true)
+    const [loggingIn, setLoggingIn] = useState<boolean>(false)
+    const {login} = AuthService()
+    const authState = useSelector((state: RootState) => state.auth)
+    const dispath = useDispatch()
     const navigate = useNavigate()
+    console.log(authState)
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target as HTMLInputElement;
@@ -24,11 +34,38 @@ function Login() {
         e.preventDefault();
     }
 
-    const onEmailLogin = () => {
+    const onEmailLogin = async () => {
         console.log(inputs);
         if (!validateInputs(inputs)) return;
-        dispatch(login({username: inputs.email, email: inputs.email, token: "123" }))
-        navigate("/")
+        setLoggingIn(true)
+        await login(inputs)
+        setLoggingIn(false);
+    }
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem("smart-wallet-user");
+        if (storedUser) {
+            const user = JSON.parse(storedUser)
+            dispath(loginSuccess({
+                username: user.username,
+                email: user.email,
+                token: user.token,
+                currency: user.currency,
+                plan: user.plan,
+                role: user.role
+            }))
+            navigate("/")
+        }
+        setFetchingUserData(false)
+    }, [])
+
+    // TODO: Check loading page
+    if (fetchingUserData) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900">Loading...</div>
+            </div>
+        )
     }
 
     return (
@@ -40,7 +77,7 @@ function Login() {
                             Seamless Login for Exclusive Access
                         </h2>
                         <p className="text-sm mt-6 text-text-light-secondary dark:text-text-dark-secondary">Immerse yourself in a hassle-free login journey with our intuitively designed login form. Effortlessly access your account.</p>
-                        <p className="text-sm mt-12 text-text-light-secondary dark:text-text-dark-secondary">Don&apos;t have an account? <a href="javascript:void(0);" className="text-primary font-semibold hover:underline ml-1">Register here</a></p>
+                        <p className="text-sm mt-12 text-text-light-secondary dark:text-text-dark-secondary">Don&apos;t have an account? <Link to={"/register"}><span className="text-primary font-semibold hover:underline ml-1">Register here</span></Link></p>
                     </div>
 
                     <form className="max-w-md md:ml-auto w-full" onSubmit={onSubmit}>
@@ -59,7 +96,9 @@ function Login() {
                         </div>
 
                         <div className="!mt-8">
-                            <Button text="Log in" onClick={onEmailLogin} />
+                            {
+                                loggingIn ? <LoadingButton text="Logging in..." /> : <Button text="Login" onClick={onEmailLogin} />
+                            }
                         </div>
 
                         <div className="my-4 flex items-center gap-4">

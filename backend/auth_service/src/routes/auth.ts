@@ -8,6 +8,8 @@ import { sendOTPEmail } from '../services/email.service';
 import Plan, { PlanType } from '../models/plan';
 import Payment from '../models/payment';
 import Subscription, { SubscriptionStatus } from '../models/subscription';
+import { LoginStatus } from '../interfaces/responses';
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt.util';
 
 const authRouter = express.Router();
 
@@ -409,7 +411,7 @@ authRouter.post('/subscriptions/subscribe', async (req: Request, res: Response) 
             endDate,
             lastBillingDate: startDate,
             nextBillingDate: endDate,
-            status: SubscriptionStatus.PENDING,
+            status: plan.name === PlanType.STARTER ? SubscriptionStatus.ACTIVE : SubscriptionStatus.PENDING,
             autoRenew
         });
 
@@ -679,5 +681,194 @@ authRouter.get('/plans', async (req: Request, res: Response) => {
         });
     }
 });
+
+// TODO: Check refresh token logic
+authRouter.post("/login", async (req: Request, res: Response) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                error: null,
+                data: {
+                    message: 'Invalid credentials',
+                    object: {
+                        status: LoginStatus.INVALID_CREDENTIALS
+                    }
+                }
+            });
+            return;
+        }
+
+        if (user.blockedUntil && user.blockedUntil > new Date()) {
+            const remainingTime = user.blockedUntil.getTime() - Date.now();
+            const minutesRemaining = Math.ceil(remainingTime / (1000 * 60));
+            res.status(429).json({
+                success: false,
+                error: null,
+                data: {
+                    message: `Maximum login attempts reached. Please try again after ${minutesRemaining} minutes`,
+                    object: {
+                        username: user.username,
+                        email: user.email,
+                        status: LoginStatus.BLOCKED
+                    }
+                }
+            });
+            return;
+        }
+        if (bcrypt.compareSync(password, user.password)) {
+            if (!user.enabled) {
+                res.status(403).json({
+                    success: false,
+                    error: null,
+                    data: {
+                        message: 'Account not verified. Please verify your account first.',
+                        object: {
+                            username: user.username,
+                            email: user.email,
+                            status: LoginStatus.VERIFICATION_REQUIRED
+                        }
+                    }
+                });
+                return;
+            }
+            if (!user.currency) {
+                res.status(403).json({
+                    success: false,
+                    error: null,
+                    data: {
+                        message: 'Please select your currency.',
+                        object: {
+                            username: user.username,
+                            email: user.email,
+                            status: LoginStatus.CURRENCY_REQUIRED
+                        }
+                    }
+                });
+                return;
+            }
+            const subscription = await Subscription.findOne({ userId: user._id, status: SubscriptionStatus.ACTIVE });
+            if (!subscription) {
+                res.status(403).json({
+                    success: false,
+                    error: null,
+                    data: {
+                        message: 'Please subscribe to a plan.',
+                        object: {
+                            username: user.username,
+                            email: user.email,
+                            status: LoginStatus.SUBSCRIPTION_REQUIRED
+                        }
+                    }
+                });
+                return;
+            }
+            const plan = await Plan.findOne({ _id: subscription.planId });
+            if (plan!.name !== PlanType.STARTER && subscription.endDate < new Date()) {
+                res.status(403).json({
+                    success: false,
+                    error: null,
+                    data: {
+                        message: 'Your subscription has expired.',
+                        object: {
+                            username: user.username,
+                            email: user.email,
+                            status: LoginStatus.SUBSCRIPTION_EXPIRED
+                        }
+                    }
+                });
+                return;
+            }
+            const accessToken = generateAccessToken({ email: user.email, role: user.role })
+            // const refreshToken = generateRefreshToken({ email: user.email, role: user.role })
+
+            // res.cookie('refreshToken', refreshToken, {
+            //     httpOnly: true,
+            //     secure: false, // TODO: Use true in production with HTTPS
+            //     sameSite: 'strict',
+            //     path: '/refresh_token',
+            // });
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    object: {
+                        username: user.username,
+                        email: user.email,
+                        currency: user.currency,
+                        plan: plan!.name,
+                        accessToken: accessToken,
+                        role: user.role
+                    },
+                    message: 'Login successful'
+                },
+                error: null
+            });
+            return;
+        }
+        res.status(401).json({
+            success: false,
+            error: null,
+            data: {
+                message: 'Invalid credentials',
+                object: {
+                    username: user.username,
+                    email: user.email,
+                    status: LoginStatus.INVALID_CREDENTIALS
+                }
+            }
+        })
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        res.status(500).json({
+            success: false,
+            error: { message: 'Error while login: ' + errorMessage },
+            data: null
+        });
+    }
+
+});
+
+// Refresh Token
+// app.post('/refresh_token', (req: Request, res: Response) => {
+//     const token = req.cookies.refreshToken;
+//     if (!token) return res.sendStatus(401);
+//     if (!refreshTokens.includes(token)) return res.sendStatus(403);
+  
+//     jwt.verify(token, REFRESH_TOKEN_SECRET, (err, user: any) => {
+//       if (err) return res.sendStatus(403);
+  
+//       const newAccessToken = generateAccessToken({ id: user.id, username: user.username });
+//       res.json({ accessToken: newAccessToken });
+//     });
+//   })
+
+// Middleware
+// const authenticate = (req: Request, res: Response, next: () => void) => {
+//     const authHeader = req.headers['authorization'];
+//     const token = authHeader?.split(' ')[1];
+//     if (!token) return res.sendStatus(401);
+  
+//     jwt.verify(token, ACCESS_TOKEN_SECRET, (err, user: any) => {
+//       if (err) return res.sendStatus(403);
+//       (req as any).user = user;
+//       next();
+//     });
+//   };
+  
+//   // Protected Route
+//   app.get('/protected', authenticate, (req: Request, res: Response) => {
+//     res.json({ message: 'This is protected data', user: (req as any).user });
+//   });
+  
+//   // Logout
+//   app.post('/logout', (req: Request, res: Response) => {
+//     const token = req.cookies.refreshToken;
+//     refreshTokens = refreshTokens.filter(t => t !== token);
+//     res.clearCookie('refreshToken', { path: '/refresh_token' });
+//     res.sendStatus(204);
+//   })
 
 export default authRouter;

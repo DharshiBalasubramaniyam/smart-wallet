@@ -30,6 +30,10 @@ export interface SubscribeRequest {
     autoRenew: boolean;
 }
 
+export interface UpdateCurrencyRequest {
+    currency: string;
+    email: string;
+}
 export interface PlanInfo {
     _id: string;
     name: string;
@@ -45,3 +49,9 @@ export interface ApiResponse {
     error: {message: string} | null, 
     data: {message: string, object?: any} | null
 }
+
+export enum UserRole {
+    ADMIN = 'ADMIN',
+    USER = 'USER'
+}
+

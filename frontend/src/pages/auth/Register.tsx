@@ -5,9 +5,12 @@ import Input from "../../components/Input";
 import { toast } from 'react-toastify';
 import { RegistrationInfo } from "../../interfaces/modals";
 import { AuthService } from "../../services/auth/auth.service";
+import LoadingButton from "../../components/LoadingButton";
+import { Link } from "react-router-dom";
 
 function Register() {
     const [inputs, setInputs] = useState<RegistrationInfo>({ username: "", email: "", password: "" })
+    const [loading, setLoading] = useState(false);
     const { register } = AuthService();
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,7 +27,9 @@ function Register() {
     const onEmailRegister = async () => {
         if (!validateInputs(inputs)) return;
         console.log(inputs);
+        setLoading(true);
         await register(inputs)
+        setLoading(false);
     }
 
     return (
@@ -36,7 +41,7 @@ function Register() {
                             Seamless Login for Exclusive Access
                         </h2>
                         <p className="text-sm mt-6 text-text-light-secondary dark:text-text-dark-secondary">Immerse yourself in a hassle-free login journey with our intuitively designed login form. Effortlessly access your account.</p>
-                        <p className="text-sm mt-12 text-text-light-secondary dark:text-text-dark-secondary">Already have an account? <a href="javascript:void(0);" className="text-primary font-semibold hover:underline ml-1">Login here</a></p>
+                        <p className="text-sm mt-12 text-text-light-secondary dark:text-text-dark-secondary">Already have an account? <Link to={"/login"}><span className="text-primary font-semibold hover:underline ml-1">Login here</span></Link></p>
                     </div>
 
                     <form className="max-w-md md:ml-auto w-full" onSubmit={onSubmit}>
@@ -51,7 +56,9 @@ function Register() {
                         </div>
 
                         <div className="!mt-8">
-                            <Button text="Create account" onClick={onEmailRegister} />
+                            {
+                                loading ? <LoadingButton text="Creating account..." /> : <Button text="Create account" onClick={onEmailRegister} />
+                            }
                         </div>
 
                         <div className="my-4 flex items-center gap-4">
