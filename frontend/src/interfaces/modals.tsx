@@ -38,7 +38,8 @@ export interface PlanInfo {
     _id: string;
     name: string;
     description: string;
-    price: number;
+    monthly_price: number;
+    yearly_price: number;
     currency: string;
     features: string[];
     active: boolean;

@@ -39,7 +39,8 @@ export interface IPlan extends Document {
     _id: string;
     name: PlanType;
     description: string;
-    price: number;
+    monthly_price: number;
+    yearly_price: number;
     currency: string;
     features: string[];
     active: boolean;
@@ -48,8 +49,8 @@ export interface IPlan extends Document {
 const PlanSchema: Schema = new Schema({
     name: { type: String, required: true },
     description: { type: String },
-    billingCycle: { type: String, enum: Object.values(BillingCycle), required: true },
-    price: { type: Number },
+    monthly_price: { type: Number },
+    yearly_price: { type: Number },
     currency: { type: String, default: 'USD' },
     features: [{ type: String }],
     active: { type: Boolean, default: true }

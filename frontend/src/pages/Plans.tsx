@@ -61,10 +61,18 @@ const Plans: React.FC = () => {
                                     </p>
                                     <div className="mb-6">
                                         <span className="text-4xl font-bold text-text-light-primary dark:text-text-dark-primary">
-                                            {plan.currency} {plan.price}
+                                            {plan.currency} {plan.monthly_price}
                                         </span>
                                         <span className="text-text-light-secondary dark:text-text-dark-secondary ml-2">
                                             /month
+                                        </span>
+                                    </div>
+                                    <div className="mb-6">
+                                        <span className="text-4xl font-bold text-text-light-primary dark:text-text-dark-primary">
+                                            {plan.currency} {plan.yearly_price}
+                                        </span>
+                                        <span className="text-text-light-secondary dark:text-text-dark-secondary ml-2">
+                                            /year
                                         </span>
                                     </div>
                                     <ul className="space-y-3 mb-8">

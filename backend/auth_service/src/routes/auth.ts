@@ -189,7 +189,9 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
 
         // Check if user is blocked
         if (user.blockedUntil) {
+            console.log("user blocked")
             if (user.blockedUntil > new Date()) {
+                console.log("time remaining to unlock")
                 const remainingTime = user.blockedUntil.getTime() - Date.now();
                 const minutesRemaining = Math.ceil(remainingTime / (1000 * 60));
                 res.status(429).json({
@@ -202,6 +204,7 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
                 });
                 return;
             } else {
+                console.log("unblocking user")
                 user.blockedUntil = undefined;
                 await OTP.deleteOne({ _id: existingOTP?._id });
                 await user.save();
@@ -215,6 +218,7 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
 
         if (!existingOTP) {
             // No existing OTP - create new one
+            console.log("no existing otp")
             await OTP.create({
                 userId: user._id,
                 code: otpCode,
@@ -224,10 +228,12 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
                 lastOtpAttemptAt: new Date()
             });
         } else {
+            console.log("existing otp found: ", existingOTP)
             // Check if last request was more than 30 minutes ago
             const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
             if (existingOTP.lastOtpAttemptAt && existingOTP.lastOtpAttemptAt < thirtyMinutesAgo) {
+                console.log("otp requested long time ago")
                 // Delete old OTP and create new one
                 await OTP.deleteOne({ _id: existingOTP._id });
                 await OTP.create({
@@ -240,21 +246,24 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
                 });
             } else if (existingOTP.attempts < 3) {
                 // Increment attempts and update OTP
-                await OTP.findByIdAndUpdate(existingOTP._id, {
+                const incremetedOTP = await OTP.findByIdAndUpdate(existingOTP._id, {
                     code: otpCode,
                     expiredAt: otpExpiry,
                     $inc: { attempts: 1 },
                     lastOtpAttemptAt: new Date()
                 });
+                console.log("incrementing otp count: ", incremetedOTP)
             } else {
                 // Block user after 3 attempts
                 const blockUntil = new Date();
                 blockUntil.setMinutes(blockUntil.getMinutes() + 30);
 
-                await User.findByIdAndUpdate(user._id, {
+                const blockedUser = await User.findByIdAndUpdate(user._id, {
                     blockedUntil: blockUntil,
                     enabled: false
                 });
+
+                console.log("user blocked: ", blockedUser)
 
                 await OTP.deleteOne({ _id: existingOTP._id });
 
@@ -274,6 +283,7 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
         await sendOTPEmail(email, otpCode);
 
         const currentOTP = await OTP.findOne({ userId: user._id });
+        console.log("current otp: ", currentOTP)
 
         res.status(200).json({
             success: true,
@@ -725,7 +735,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
         }
         if (bcrypt.compareSync(password, user.password)) {
             if (!user.enabled) {
-                res.status(403).json({
+                res.status(401).json({
                     success: false,
                     error: null,
                     data: {
@@ -740,7 +750,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                 return;
             }
             if (!user.currency) {
-                res.status(403).json({
+                res.status(401).json({
                     success: false,
                     error: null,
                     data: {
@@ -756,7 +766,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
             }
             const subscription = await Subscription.findOne({ userId: user._id, status: SubscriptionStatus.ACTIVE });
             if (!subscription) {
-                res.status(403).json({
+                res.status(401).json({
                     success: false,
                     error: null,
                     data: {
@@ -772,7 +782,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
             }
             const plan = await Plan.findOne({ _id: subscription.planId });
             if (plan!.name !== PlanType.STARTER && subscription.endDate < new Date()) {
-                res.status(403).json({
+                res.status(401).json({
                     success: false,
                     error: null,
                     data: {

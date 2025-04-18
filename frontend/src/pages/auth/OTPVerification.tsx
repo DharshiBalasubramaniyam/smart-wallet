@@ -12,6 +12,7 @@ import LoadingButton from "../../components/LoadingButton";
 
 function OTPVerification() {
     const [otp, setOtp] = useState<string>("");
+    const [sendingOTP, setSendingOTP] = useState<boolean>(false);
     const {sendOTP, verifyOTP} = AuthService();
     const email = useSelector((state: RootState) => state.auth.email);
     const OTPAttemptsRemaining = useSelector((state: RootState) => state.auth.OTPAttemptsRemaining);
@@ -20,7 +21,9 @@ function OTPVerification() {
 
     const handleResend = async () => {
         if (!email) return;
+        setSendingOTP(true);
         await sendOTP({email: email})
+        setSendingOTP(false);
     };
 
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -68,18 +71,26 @@ function OTPVerification() {
                         </div>
 
                         <div className="mt-4 flex items-center justify-between">
+                        
                             {
-                                OTPAttemptsRemaining > 0 ? (
+                                sendingOTP ? (
+                                    <button 
+                                        type="button"
+                                        onClick={handleResend}
+                                        disabled={OTPAttemptsRemaining < 0}
+                                        className={`text-sm 'text-primary text-primary font-semibold'}`}
+                                    >
+                                        Sending OTP to {email}...
+                                    </button>
+                                ) : (
                                     <button 
                                         type="button"
                                         onClick={handleResend}
                                         disabled={OTPAttemptsRemaining < 0}
                                         className={`text-sm 'text-primary hover:underline cursor-pointer text-primary font-semibold'}`}
                                     >
-                                        Resend Code
+                                        Resend Code (You have {OTPAttemptsRemaining} more attempts)
                                     </button>
-                                ) : (
-                                    <p className="text-center text-sm">You have reached maxium number of attempts. Please try again after some time.</p>
                                 )
                             }
                         </div>
