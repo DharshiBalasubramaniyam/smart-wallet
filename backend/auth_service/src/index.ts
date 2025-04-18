@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import authRouter from "./routes/auth";
 import { initSubscriptionJobs } from './jobs/subscription.job';
 import { connectDatabase } from './config/database';
@@ -12,13 +13,17 @@ const PORT = process.env.PORT || 8080;
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5173', 
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Connect to database
 connectDatabase()
     .then(() => {
-        // Root route
+        // Routes
         app.use("/auth", authRouter);
 
         // Cron jobs
@@ -33,6 +38,8 @@ connectDatabase()
         console.error('Failed to start server:', error);
         process.exit(1);
     });
+
+
 
 // Handle unexpected errors
 process.on('unhandledRejection', (error) => {

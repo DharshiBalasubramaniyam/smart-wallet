@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter } from "react-router-dom"
 import AppContainer from "./routes/routes"
 import { ToastContainer } from 'react-toastify';
@@ -13,7 +12,6 @@ function App() {
         <AppContainer />
         <ToastContainer theme="dark" />
       </Provider>
-
     </BrowserRouter>
   )
 }

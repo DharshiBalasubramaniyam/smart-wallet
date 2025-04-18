@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import User from '../models/user';
 import OTP from '../models/otp';
+import jwt from 'jsonwebtoken';
 import { CreateAccountRequest, CreateSubscriptionRequest, SavePaymentRequest, UpdateCurrencyRequest, VerifyOTPRequest } from '../interfaces/requests';
 import { generateOTP } from '../utils/otp.util';
 import { sendOTPEmail } from '../services/email.service';
@@ -10,6 +11,11 @@ import Payment from '../models/payment';
 import Subscription, { SubscriptionStatus } from '../models/subscription';
 import { LoginStatus } from '../interfaces/responses';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.util';
+import dotenv from 'dotenv';
+import { authenticate } from '../middlewares/auth';
+
+dotenv.config();
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
 
 const authRouter = express.Router();
 
@@ -682,7 +688,6 @@ authRouter.get('/plans', async (req: Request, res: Response) => {
     }
 });
 
-// TODO: Check refresh token logic
 authRouter.post("/login", async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
@@ -781,15 +786,24 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                 });
                 return;
             }
-            const accessToken = generateAccessToken({ email: user.email, role: user.role })
-            // const refreshToken = generateRefreshToken({ email: user.email, role: user.role })
+            const accessToken = generateAccessToken({ id: user._id as string, role: user.role })
+            const refreshToken = generateRefreshToken({ id: user._id as string, role: user.role })
+            user.refreshToken = refreshToken
+            const updatedUser = await User.findByIdAndUpdate(
+                user._id,
+                { refreshToken },
+                { new: true }
+            ).select('-password');
 
-            // res.cookie('refreshToken', refreshToken, {
-            //     httpOnly: true,
-            //     secure: false, // TODO: Use true in production with HTTPS
-            //     sameSite: 'strict',
-            //     path: '/refresh_token',
-            // });
+            console.log(updatedUser?.refreshToken)
+
+            res.cookie('refreshToken', updatedUser!.refreshToken, {
+                httpOnly: true,
+                secure: false, // TODO: Use true in production with HTTPS
+                sameSite: 'strict',
+                path: '/auth/',
+            });
+
 
             res.status(200).json({
                 success: true,
@@ -832,43 +846,89 @@ authRouter.post("/login", async (req: Request, res: Response) => {
 });
 
 // Refresh Token
-// app.post('/refresh_token', (req: Request, res: Response) => {
-//     const token = req.cookies.refreshToken;
-//     if (!token) return res.sendStatus(401);
-//     if (!refreshTokens.includes(token)) return res.sendStatus(403);
-  
-//     jwt.verify(token, REFRESH_TOKEN_SECRET, (err, user: any) => {
-//       if (err) return res.sendStatus(403);
-  
-//       const newAccessToken = generateAccessToken({ id: user.id, username: user.username });
-//       res.json({ accessToken: newAccessToken });
-//     });
-//   })
+authRouter.post('/refresh_token', async (req: Request, res: Response) => {
+    const token = req.cookies?.refreshToken;
+    console.log("req.cookies: ", req.cookies)
+    if (!token) {
+        console.log("Refresh token not found in cookie!")
+        res.sendStatus(401);
+        return;
+    };
+    const storedToken = await User.findOne({ refreshToken: token });
+    if (!storedToken) {
+        console.log("Refresh token not found in db!")
+        res.sendStatus(401);
+        return;
+    }
 
-// Middleware
-// const authenticate = (req: Request, res: Response, next: () => void) => {
-//     const authHeader = req.headers['authorization'];
-//     const token = authHeader?.split(' ')[1];
-//     if (!token) return res.sendStatus(401);
-  
-//     jwt.verify(token, ACCESS_TOKEN_SECRET, (err, user: any) => {
-//       if (err) return res.sendStatus(403);
-//       (req as any).user = user;
-//       next();
-//     });
-//   };
-  
-//   // Protected Route
-//   app.get('/protected', authenticate, (req: Request, res: Response) => {
-//     res.json({ message: 'This is protected data', user: (req as any).user });
-//   });
-  
-//   // Logout
-//   app.post('/logout', (req: Request, res: Response) => {
-//     const token = req.cookies.refreshToken;
-//     refreshTokens = refreshTokens.filter(t => t !== token);
-//     res.clearCookie('refreshToken', { path: '/refresh_token' });
-//     res.sendStatus(204);
-//   })
+    jwt.verify(token, REFRESH_TOKEN_SECRET, async (err: any, user: any) => {
+        if (err) {
+            console.log("Refresh token expired!")
+            return res.sendStatus(401)
+        };
+        console.log("Refresh token valid. user id: ", user.id)
+        const storedUser = await User.findOne({ _id: user.id });
+        if (!storedUser) {
+            return res.status(401).send("no user found")
+        }
+        console.log("stored user: ", storedUser)
+        const subscription = await Subscription.findOne({ userId: user.id, status: SubscriptionStatus.ACTIVE });
+        if (!subscription) {
+            return res.status(401).send("no subscription found")
+        }
+        const plan = await Plan.findOne({ _id: subscription.planId });
+        if (!plan) {
+            return res.status(401).send("no plan found")
+        }
+        if (plan.name !== PlanType.STARTER && subscription.endDate < new Date()) {
+            return res.status(401).send("subscription ended")
+        }
+        if (!storedUser.currency || !storedUser.enabled) {
+            return res.status(401).send("user disbled or no currency")
+        }
+        const newAccessToken = generateAccessToken({ id: storedUser._id as string, role: user.role });
+        res.status(200).json({
+            success: true,
+            data: {
+                object: {
+                    username: storedUser.username,
+                    email: storedUser.email,
+                    currency: storedUser.currency,
+                    plan: plan!.name,
+                    accessToken: newAccessToken,
+                    role: storedUser.role
+                },
+                message: 'Refresh successful'
+            },
+            error: null
+        });
+        return;
+    });
+})
+
+// Logout
+authRouter.post('/logout', async (req: Request, res: Response) => {
+    const refreshToken = req.cookies?.refreshToken;
+    const user = await User.findOne(
+        { refreshToken },
+        { new: true }
+    ).select('-password');
+    if (user) {
+        const updatedUser = await User.findByIdAndUpdate(
+            user._id,
+            { refreshToken: "" },
+            { new: true }
+        ).select('-password');
+        console.log("updated logout user: ", updatedUser)
+    }
+    res.clearCookie('refreshToken');
+    res.sendStatus(204);
+})
+
+// Protected Route Test
+authRouter.get('/protected', authenticate, (req: Request, res: Response) => {
+    console.log("protected route. user: ", (req as any).user)
+    res.json({ message: 'This is protected data' });
+});
 
 export default authRouter;

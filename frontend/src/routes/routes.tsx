@@ -10,17 +10,19 @@ import RegisterSuccess from "../pages/auth/RegisterSuccess";
 import UserPortal from "../pages/protected/UserPortal";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
-import { Navigate } from "react-router-dom";
+import { refreshAccessToken } from "../config/api.config";
 
 function AppContainer() {
 
     function ProtectedRoute({ children }: { children: React.ReactNode }) {
         const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-
-        if (!isAuthenticated) {
-            return <Navigate to="/" />;
+        console.log(isAuthenticated);
+        if (!isAuthenticated) { // not logged in and token is required
+            refreshAccessToken()
+            .then((res) => {
+                console.log(">>>> refreshed")
+            });
         }
-
         return <>{children}</>;
     }
 
@@ -36,7 +38,7 @@ function AppContainer() {
             <Route
                 path="/user-portal/:view"
                 element={
-                    <ProtectedRoute>
+                    <ProtectedRoute >
                         <UserPortal />
                     </ProtectedRoute>
                 }

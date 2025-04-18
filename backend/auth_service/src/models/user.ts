@@ -14,6 +14,7 @@ export interface IUser extends Document {
     enabled: boolean;
     role: UserRole;
     blockedUntil?: Date;
+    refreshToken?:string
 }
 
 const UserSchema: Schema = new Schema({
@@ -24,7 +25,8 @@ const UserSchema: Schema = new Schema({
     currency: { type: String, default: 'USD' },
     enabled: { type: Boolean, default: true },
     role: { type: String, enum: Object.values(UserRole), default: UserRole.USER },
-    blockedUntil: { type: Date }
+    blockedUntil: { type: Date },
+    refreshToken: { type: String },
 }, {
     timestamps: true
 });

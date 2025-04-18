@@ -3,17 +3,18 @@ import { MenuIcon } from "../icons";
 import Logo from "../Logo";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
+import { UserPortalView } from "./SideBar";
 
-function NavBar({ setSideBarOpen, isSideBarOpen }: { setSideBarOpen: (isopen: boolean) => void, isSideBarOpen:boolean }) {
+function NavBar({ setSideBarOpen, isSideBarOpen, view }: { setSideBarOpen: (isopen: boolean) => void, isSideBarOpen:boolean, view: UserPortalView }) {
 
    const [isUserMenuOpen, setUserMenuOpen] = useState<boolean>(false)
    const {email, username} = useSelector((state: RootState) => state.auth)
 
    return (
-      <nav className="fixed top-0 z-50 w-full bg-bg-light-primary dark:bg-bg-dark-primary border-b border-border-light-primary dark:border-border-dark-primary">
-         <div className="px-3 py-3 lg:px-5 lg:pl-3">
-            <div className="flex items-center justify-between">
-               <div className="flex items-center justify-start rtl:justify-end">
+      <nav className="fixed top-0 z-50 w-full bg-bg-light-primary dark:bg-bg-dark-primary border-b border-border-light-primary dark:border-border-dark-primary h-20">
+         <div className="px-3 py-3 lg:px-5 lg:pl-3 h-full">
+            <div className="flex items-center justify-between h-full">
+               <div className="flex items-center justify-start rtl:justify-end w-65">
                   <button
                      type="button"
                      className="inline-flex items-center p-2 text-sm rounded-lg sm:hidden hover:bg-hover-light-primary focus:outline-none focus:ring-2 focus:ring-gray-200 active:ring-hover-light-primary dark:text-gray-400 dark:hover:bg-hover-dark-primary dark:focus:ring-gray-600 dark:active:ring-hover-dark-primary"
@@ -22,6 +23,15 @@ function NavBar({ setSideBarOpen, isSideBarOpen }: { setSideBarOpen: (isopen: bo
                      <MenuIcon />
                   </button>
                   <Logo/>
+               </div>
+               <div className="flex-1 relative">
+                  <input 
+                     className="bg-bg-light-primary dark:bg-bg-dark-primary w-full p-2 rounded border-1 border-border-light-primary dark:border-border-dark-primary text-text-light-primary dark:text-text-dark-primary outline-none focus:border-primary focus:bg-transparent text-sm"
+                     placeholder={`Search ${view}`}
+                  />
+                  {/* <div className="absolute top-full left-0 w-full h-60 bg-amber-500 rounded-b-md">
+
+                  </div> */}
                </div>
                <div className="flex items-center relative">
                   <div className="flex items-center ms-3">
@@ -42,20 +52,6 @@ function NavBar({ setSideBarOpen, isSideBarOpen }: { setSideBarOpen: (isopen: bo
                                     {email}
                                  </p>
                               </div>
-                              {/* <ul className="py-1" role="none">
-                                 <li>
-                                    <a href="#" className="block px-4 py-2 text-sm text-text-light-primary hover:bg-hover-light-primary dark:text-text-dark-primary dark:hover:bg-hover-dark-primary dark:hover:text-text-dark-primary" role="menuitem">Dashboard</a>
-                                 </li>
-                                 <li>
-                                    <a href="#" className="block px-4 py-2 text-sm text-text-light-primary hover:bg-hover-light-primary dark:text-text-dark-primary dark:hover:bg-hover-dark-primary dark:hover:text-text-dark-primary" role="menuitem">Settings</a>
-                                 </li>
-                                 <li>
-                                    <a href="#" className="block px-4 py-2 text-sm text-text-light-primary hover:bg-hover-light-primary dark:text-text-dark-primary dark:hover:bg-hover-dark-primary dark:hover:text-text-dark-primary" role="menuitem">Earnings</a>
-                                 </li>
-                                 <li>
-                                    <a href="#" className="block px-4 py-2 text-sm text-text-light-primary hover:bg-hover-light-primary dark:text-text-dark-primary dark:hover:bg-hover-dark-primary dark:hover:text-text-dark-primary" role="menuitem">Sign out</a>
-                                 </li>
-                              </ul> */}
                            </div>
                         )
                      }

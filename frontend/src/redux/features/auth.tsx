@@ -3,27 +3,16 @@ import { PlanType, UserRole } from "@/interfaces/modals";
 import { AuthState } from "@/interfaces/redux";
 import { createSlice } from "@reduxjs/toolkit";
 
-const storedUser = localStorage.getItem("smart-wallet-user");
-const user = storedUser ? JSON.parse(storedUser) : null
-const initialState: AuthState = user && user.token && user.email ? {
-    username: user.username,
-    email: user.email,
-    token: user.token,
-    currency: user.currency,
-    plan: user.plan,
-    role: user.role,
-    isAuthenticated: true, // TODO: Consider validating token before making true
-    OTPAttemptsRemaining: 3,
-} : {
+const initialState: AuthState = {
     email: null,
     username: null,
-    token: null,
+    token: null, 
     isAuthenticated: false,
     OTPAttemptsRemaining: 3,
     currency: null,
     plan: null,
-    role: null
-}
+    role: null,
+};
 
 // createSlice allows you to define the Redux state slice in a single function,
 // including the initial state, reducers, and action creators, making it easier to manage state and actions.
@@ -34,6 +23,7 @@ const authSlice = createSlice({
     // reducer functions are accepting the previous state and the action and return the new state
     reducers: {
         loginSuccess(state, action: { "payload": { username: string, email: string, token: string, currency: string, plan: PlanType, role: UserRole } }) {
+            console.log("login success: ", action.payload.token)
             state.username = action.payload.username;
             state.token = action.payload.token;
             state.email = action.payload.email;

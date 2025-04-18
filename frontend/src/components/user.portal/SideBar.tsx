@@ -4,6 +4,7 @@ import { logout } from "../../redux/features/auth";
 import { useNavigate } from "react-router-dom";
 import SidebarDropdownItem from "./SideBarDropDownItem";
 import { BudgetIcon, CategoryIcon, DashBoardIcon, GoalIcon, LogoutIcon, NotificationIcon, ScheduleIcon, SettingsIcon, SpaceIcon, TransactionIcon } from "../icons";
+import { AuthService } from "../../services/auth/auth.service";
 
 export enum UserPortalView {
    DASHBOARD = "dashboard",
@@ -25,14 +26,10 @@ function SideBar({ isSideBarOpen, view }: { isSideBarOpen: boolean, view: UserPo
 
    const dispatch = useDispatch()
    const navigate = useNavigate()
-
-   const onLogout = () => {
-      dispatch(logout())
-      navigate("/")
-   }
+   const {logOut} = AuthService();
 
    return (
-      <aside id="logo-sidebar" className={`fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform ${sideBarStyleSM} bg-bg-light-primary border-r border-border-light-primary dark:bg-bg-dark-primary dark:border-border-dark-primary sm:translate-x-0`} aria-label="Sidebar">
+      <aside id="logo-sidebar" className={`fixed top-5 left-0 z-40 w-64 h-screen pt-20 transition-transform ${sideBarStyleSM} bg-bg-light-primary border-r border-border-light-primary dark:bg-bg-dark-primary dark:border-border-dark-primary sm:translate-x-0`} aria-label="Sidebar">
          <div className="h-full px-3 pb-4 overflow-y-auto bg-bg-light-primary dark:bg-bg-dark-primary">
             <ul className="space-y-2 font-medium">
                <SideBarItem name={UserPortalView.DASHBOARD} isActive={view == UserPortalView.DASHBOARD} Icon={DashBoardIcon} />
@@ -47,7 +44,7 @@ function SideBar({ isSideBarOpen, view }: { isSideBarOpen: boolean, view: UserPo
                   <SideBarItem name={UserPortalView.SETTINGS_PROFILE} isActive={view == UserPortalView.SETTINGS_PROFILE} />
                   <SideBarItem name={UserPortalView.SETTINGS_BILLING} isActive={view == UserPortalView.SETTINGS_BILLING} />
                </SidebarDropdownItem>
-               <SideBarItem name={UserPortalView.LOGOUT} isActive={view == UserPortalView.LOGOUT} onClick={onLogout} Icon={LogoutIcon} />
+               <SideBarItem name={UserPortalView.LOGOUT} isActive={view == UserPortalView.LOGOUT} onClick={logOut} Icon={LogoutIcon} />
             </ul>
          </div>
       </aside>

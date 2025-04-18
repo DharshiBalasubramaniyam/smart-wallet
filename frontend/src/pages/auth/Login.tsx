@@ -1,27 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../components/Button";
 import { FacebookIcon, GoogleIcon } from "../../components/icons";
 import Input from "../../components/Input";
 import { toast } from 'react-toastify';
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { LoginInfo } from "../../interfaces/modals";
 import { AuthService } from "../../services/auth/auth.service";
-import { useDispatch, useSelector } from "react-redux";
-import { loginSuccess } from "../../redux/features/auth";
 import LoadingButton from "../../components/LoadingButton";
-import { RootState } from "@/redux/store/store";
 
 
 // TODO: Check login with social media
 function Login() {
     const [inputs, setInputs] = useState<LoginInfo>({ email: "", password: "" });
-    const [fetchingUserData, setFetchingUserData] = useState<boolean>(true)
     const [loggingIn, setLoggingIn] = useState<boolean>(false)
     const { login } = AuthService()
-    const authState = useSelector((state: RootState) => state.auth)
-    const dispath = useDispatch()
-    const navigate = useNavigate()
-    console.log(authState)
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target as HTMLInputElement;
@@ -40,32 +32,6 @@ function Login() {
         setLoggingIn(true)
         await login(inputs)
         setLoggingIn(false);
-    }
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem("smart-wallet-user");
-        if (storedUser) {
-            const user = JSON.parse(storedUser)
-            dispath(loginSuccess({
-                username: user.username,
-                email: user.email,
-                token: user.token,
-                currency: user.currency,
-                plan: user.plan,
-                role: user.role
-            }))
-            navigate("/")
-        }
-        setFetchingUserData(false)
-    }, [])
-
-    // TODO: Check loading page
-    if (fetchingUserData) {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900">Loading...</div>
-            </div>
-        )
     }
 
     return (

@@ -1,17 +1,17 @@
 import axios from 'axios';
-import API_CONFIG from '../../config/api.config';
-import { ApiResponse, PlanInfo, PlanType, RegistrationInfo, SendOtpRequest, SubscribeRequest, verifyOtpRequest, UpdateCurrencyRequest, LoginInfo } from '../../interfaces/modals';
+import { api } from '../../config/api.config';
+import { PlanInfo, PlanType, RegistrationInfo, SendOtpRequest, SubscribeRequest, verifyOtpRequest, UpdateCurrencyRequest, LoginInfo } from '../../interfaces/modals';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { loginSuccess, setEmail, setOTPAttemptsRemaining } from '../../redux/features/auth';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginSuccess, logout, setEmail, setIsAuthenticated, setOTPAttemptsRemaining, setToken } from '../../redux/features/auth';
 import { UserPortalView } from '../../components/user.portal/SideBar';
-
-const api = axios.create(API_CONFIG);
+import { RootState } from '@/redux/store/store';
 
 export function AuthService() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const token = useSelector((state: RootState) => state.auth.token)
 
     async function register(body: RegistrationInfo): Promise<void> {
         try {
@@ -67,6 +67,24 @@ export function AuthService() {
         }
     }
 
+    async function protectedRoute(): Promise<void> {
+        try {
+            console.log("sending protected route request")
+            const response = await api.get(`auth/protected`, {
+                headers: {
+                    "authorization": `Bearer ${token}`
+                }
+            });
+            console.log(response.data)
+            toast.info(response.data.message);
+            // if (response.data.success) {
+            //     return response.data.data.object as PlanInfo[];
+            // }
+        } catch (error) {
+            processError(error)
+        }
+    }
+
     async function subscribePlan(body: SubscribeRequest, planName: string): Promise<void> {
         try {
             const response = await api.post(`auth/subscriptions/subscribe`, body);
@@ -98,7 +116,7 @@ export function AuthService() {
 
     async function login(body: LoginInfo) {
         try {
-            const response = await api.post(`auth/login`, body);
+            const response = await api.post(`auth/login`, body, { withCredentials: true });
             console.log(response.data)
             if (response.data.success) {
                 const userData = {
@@ -110,7 +128,6 @@ export function AuthService() {
                     role: response.data.data.object.role,
                 }
                 dispatch(loginSuccess(userData))
-                localStorage.setItem("smart-wallet-user", JSON.stringify(userData));
                 toast.success("Login successful!");
                 navigate(`/user-portal/${UserPortalView.DASHBOARD}`);
             }
@@ -126,7 +143,17 @@ export function AuthService() {
         }
     }
 
-    return { register, sendOTP, verifyOTP, getAllPlans, subscribePlan, updateCurrency, login };
+    const logOut = async () => {
+        try {
+            const response = await api.post(`auth/logout`, {}, { withCredentials: true }); // Send refresh token via cookie
+            dispatch(logout());
+        } catch (error) {
+            console.log(error)
+            dispatch(logout());
+        }
+    };
+
+    return { register, sendOTP, verifyOTP, getAllPlans, subscribePlan, updateCurrency, login, protectedRoute, logOut };
 }
 
 function processError(error: unknown): void {
