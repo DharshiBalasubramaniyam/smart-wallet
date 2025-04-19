@@ -12,7 +12,6 @@ export function AuthService() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const token = useSelector((state: RootState) => state.auth.token)
-    const email = useSelector((state: RootState) => state.auth.email)
 
     async function register(body: RegistrationInfo): Promise<void> {
         try {
