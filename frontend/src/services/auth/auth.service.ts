@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { api } from '../../config/api.config';
-import { PlanInfo, PlanType, RegistrationInfo, SendOtpRequest, SubscribeRequest, verifyOtpRequest, UpdateCurrencyRequest, LoginInfo } from '../../interfaces/modals';
+import { PlanInfo, PlanType, RegistrationInfo, SendOtpRequest, SubscribeRequest, verifyOtpRequest, UpdateCurrencyRequest, LoginInfo, LoginStatus } from '../../interfaces/modals';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,6 +12,7 @@ export function AuthService() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const token = useSelector((state: RootState) => state.auth.token)
+    const email = useSelector((state: RootState) => state.auth.email)
 
     async function register(body: RegistrationInfo): Promise<void> {
         try {
@@ -91,7 +92,7 @@ export function AuthService() {
             console.log(response.data)
             if (response.data.success) {
                 if (planName === PlanType.STARTER) {
-                    navigate('/currency');
+                    navigate('/currency', { state: { email:response.data.data.object.email } });
                 } else {
                     navigate(`/subscriptions/${response.data.data.object._id}/payment`);
                 }
@@ -143,6 +144,45 @@ export function AuthService() {
         }
     }
 
+    async function loginWithGoogle(body: {token: string}) {
+        try {
+            const response = await api.post(`auth/google`, body, { withCredentials: true });
+            console.log(response.data)
+            if (response.data.success) {
+                const userData = {
+                    username: response.data.data.object.username,
+                    email: response.data.data.object.email,
+                    token: response.data.data.object.accessToken,
+                    currency: response.data.data.object.currency,
+                    plan: response.data.data.object.plan,
+                    role: response.data.data.object.role,
+                }
+                dispatch(loginSuccess(userData))
+                toast.success("Login successful!");
+                navigate(`/user-portal/${UserPortalView.DASHBOARD}`);
+            }
+        } catch (error) {
+            // TODO: Catch different login error types: account not verified, subscription not found etc.
+            if (axios.isAxiosError(error) && error.response) {
+                const errorMessage = error.response.data?.data?.message || "An error occurred while processing your request.";
+                const status = error.response.data?.data?.object.status
+                if (status === LoginStatus.BLOCKED || status === LoginStatus.INVALID_CREDENTIALS) {
+                } else if (status === LoginStatus.CURRENCY_REQUIRED) {
+                    navigate('/currency', { state: { email: error.response.data?.data?.object.email } });
+                    dispatch(setEmail(error.response.data?.data?.object.email))
+                } else if (status === LoginStatus.SUBSCRIPTION_REQUIRED || status === LoginStatus.SUBSCRIPTION_EXPIRED) {
+                    console.log(error.response.data?.data?.object.email ?? "Email not available")
+                    dispatch(setEmail(error.response.data?.data?.object.email))
+                    navigate('/plans', { state: { email: error.response.data?.data?.object.email } });
+                }
+                toast.info(errorMessage);
+            } else {
+                toast.error("An unexpected error occurred. Please try again later.");
+            }
+            console.error("Error details:", error);
+        }
+    }
+
     const logOut = async () => {
         try {
             const response = await api.post(`auth/logout`, {}, { withCredentials: true }); // Send refresh token via cookie
@@ -153,7 +193,7 @@ export function AuthService() {
         }
     };
 
-    return { register, sendOTP, verifyOTP, getAllPlans, subscribePlan, updateCurrency, login, protectedRoute, logOut };
+    return { register, sendOTP, verifyOTP, getAllPlans, subscribePlan, updateCurrency, login, loginWithGoogle, protectedRoute, logOut };
 }
 
 function processError(error: unknown): void {

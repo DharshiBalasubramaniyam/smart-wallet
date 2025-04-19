@@ -4,13 +4,15 @@ import { AuthService } from '../services/auth/auth.service';
 import Button from '../components/Button';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store/store';
+import { useLocation } from 'react-router-dom';
 
 const Plans: React.FC = () => {
     const [plans, setPlans] = useState<PlanInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const { getAllPlans, subscribePlan } = AuthService();
-    const email = useSelector((state: RootState) => state.auth.email);
-
+    const location = useLocation();
+    const email = useSelector((state: RootState) => state.auth.email) || location.state?.email;
+    
     useEffect(() => {
         const fetchPlans = async () => {
             try {

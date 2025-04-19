@@ -433,7 +433,7 @@ authRouter.post('/subscriptions/subscribe', async (req: Request, res: Response) 
 
         res.status(201).json({
             success: true,
-            data: { object: subscription, message: 'Subscription is successfull' },
+            data: { object: {...subscription, email: user.email}, message: 'Subscription is successfull' },
             error: null
         });
 
@@ -697,6 +697,147 @@ authRouter.get('/plans', async (req: Request, res: Response) => {
         });
     }
 });
+
+authRouter.post("/google", async (req: Request, res: Response) => {
+    const { token } = req.body;
+
+    const googleRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const googleUser = await googleRes.json();
+    console.log("googleUser: ", googleUser)
+    const { email, given_name, picture } = googleUser;
+    let existingUser = await User.findOne({ email });
+    if (!existingUser) {
+        console.log("creating new user...")
+        existingUser = await User.create({
+            email,
+            username: given_name,
+            password: null,
+            currency: null,
+            enabled: true,
+            blockedUntil: null,
+        });
+    }
+
+    console.log("existing user found: ", existingUser)
+    if (existingUser.blockedUntil && existingUser.blockedUntil > new Date()) {
+        const remainingTime = existingUser.blockedUntil.getTime() - Date.now();
+        const minutesRemaining = Math.ceil(remainingTime / (1000 * 60));
+        res.status(429).json({
+            success: false,
+            error: null,
+            data: {
+                message: `Maximum login attempts reached. Please try again after ${minutesRemaining} minutes`,
+                object: {
+                    username: existingUser.username,
+                    email: existingUser.email,
+                    status: LoginStatus.BLOCKED
+                }
+            }
+        });
+        return;
+    }
+    if (!existingUser.enabled) {
+        res.status(401).json({
+            success: false,
+            error: null,
+            data: {
+                message: 'Account not verified. Please verify your account first.',
+                object: {
+                    username: existingUser.username,
+                    email: existingUser.email,
+                    status: LoginStatus.VERIFICATION_REQUIRED
+                }
+            }
+        });
+        return;
+    }
+    const subscription = await Subscription.findOne({ userId: existingUser._id, status: SubscriptionStatus.ACTIVE });
+    if (!subscription) {
+        res.status(401).json({
+            success: false,
+            error: null,
+            data: {
+                message: 'Please subscribe to a plan.',
+                object: {
+                    username: existingUser.username,
+                    email: existingUser.email,
+                    status: LoginStatus.SUBSCRIPTION_REQUIRED
+                }
+            }
+        });
+        return;
+    }
+    const plan = await Plan.findOne({ _id: subscription.planId });
+    if (plan!.name !== PlanType.STARTER && subscription.endDate < new Date()) {
+        res.status(401).json({
+            success: false,
+            error: null,
+            data: {
+                message: 'Your subscription has expired.',
+                object: {
+                    username: existingUser.username,
+                    email: existingUser.email,
+                    status: LoginStatus.SUBSCRIPTION_EXPIRED
+                }
+            }
+        });
+        return;
+    }
+    if (!existingUser.currency) {
+        res.status(401).json({
+            success: false,
+            error: null,
+            data: {
+                message: 'Please select your currency.',
+                object: {
+                    username: existingUser.username,
+                    email: existingUser.email,
+                    status: LoginStatus.CURRENCY_REQUIRED
+                }
+            }
+        });
+        return;
+    }
+    const accessToken = generateAccessToken({ id: existingUser._id as string, role: existingUser.role })
+    const refreshToken = generateRefreshToken({ id: existingUser._id as string, role: existingUser.role })
+    existingUser.refreshToken = refreshToken
+    const updatedUser = await User.findByIdAndUpdate(
+        existingUser._id,
+        { refreshToken },
+        { new: true }
+    ).select('-password');
+
+    console.log(updatedUser?.refreshToken)
+
+    res.cookie('refreshToken', updatedUser!.refreshToken, {
+        httpOnly: true,
+        secure: false, // TODO: Use true in production with HTTPS
+        sameSite: 'strict',
+        path: '/auth/',
+    });
+
+    res.status(200).json({
+        success: true,
+        data: {
+            object: {
+                username: existingUser.username,
+                email: existingUser.email,
+                currency: existingUser.currency,
+                plan: plan!.name,
+                accessToken: accessToken,
+                role: existingUser.role
+            },
+            message: 'Login successful'
+        },
+        error: null
+    });
+    return;
+})
 
 authRouter.post("/login", async (req: Request, res: Response) => {
     try {

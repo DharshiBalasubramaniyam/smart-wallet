@@ -5,6 +5,7 @@ import { AuthService } from "../../services/auth/auth.service";
 import { RootState } from "../../redux/store/store";
 import { useSelector } from "react-redux";
 import LoadingButton from "../../components/LoadingButton";
+import { useLocation } from "react-router-dom";
 
 interface Currency {
    code: string;
@@ -16,12 +17,12 @@ function Currency() {
    const [currencies, setCurrencies] = useState<Currency[]>([]);
    const [selectedCurrency, setSelectedCurrency] = useState<string>("");
    const [loading, setLoading] = useState(false);
-   const email = useSelector((state: RootState) => state.auth.email);
+   const location = useLocation();
+   const email = useSelector((state: RootState) => state.auth.email) || location.state?.email;
 
    const { updateCurrency } = AuthService();
 
    useEffect(() => {
-      // Fetch currencies from an API
       // TODO: set loading tru until fetch currencies
       const fetchCurrencies = async () => {
          try {

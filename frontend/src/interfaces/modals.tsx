@@ -56,3 +56,13 @@ export enum UserRole {
     USER = 'USER'
 }
 
+export enum LoginStatus {
+    SUCCESS,
+    BLOCKED,
+    INVALID_CREDENTIALS,
+    VERIFICATION_REQUIRED,
+    CURRENCY_REQUIRED,
+    SUBSCRIPTION_REQUIRED,
+    SUBSCRIPTION_EXPIRED
+}
+
