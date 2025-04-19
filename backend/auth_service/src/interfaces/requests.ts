@@ -4,6 +4,7 @@ export interface CreateAccountRequest {
     email: string;
     username: string;
     password: string;
+    currency: string;
 }
 
 export interface VerifyOTPRequest {

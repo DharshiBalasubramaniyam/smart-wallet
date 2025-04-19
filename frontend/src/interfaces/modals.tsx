@@ -6,7 +6,8 @@ export interface LoginInfo {
 export interface RegistrationInfo {
     username: string,
     email: string,
-    password: string
+    password: string,
+    currency: string
 }
 
 export interface SendOtpRequest {

@@ -19,8 +19,6 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
 
 const authRouter = express.Router();
 
-// todo: login
-
 // {
 //     "email": "user@example.com",
 //     "username": "testuser",
@@ -28,17 +26,15 @@ const authRouter = express.Router();
 // }
 authRouter.post('/register', async (req: Request, res: Response) => {
     try {
-        const { email, username, password }: CreateAccountRequest = req.body;
+        const { email, username, password, currency }: CreateAccountRequest = req.body;
 
         // Check if user already exists
-        const existingUser = await User.findOne({
-            $or: [{ email }, { username }]
-        });
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             res.status(400).json({
                 success: false,
-                error: { message: 'User with this email or username already exists' },
+                error: { message: 'User with this email exists. Try Login.' },
                 data: null
             });
             return;
@@ -53,9 +49,24 @@ authRouter.post('/register', async (req: Request, res: Response) => {
             email,
             username,
             password: hashedPassword,
-            currency: null,
+            currency: currency,
             enabled: false,
             blockedUntil: null
+        });
+
+        // Subscribe starter plan by default
+        const plan = await Plan.findOne({ name: PlanType.STARTER })
+        const now = Date.now();
+        await Subscription.create({
+            userId: newUser._id,
+            planId: plan!._id,
+            paymentId: null,
+            startDate: now,
+            endDate: now,
+            lastBillingDate: now,
+            nextBillingDate: now,
+            status: SubscriptionStatus.ACTIVE,
+            autoRenew: false
         });
 
         // Remove password from response
@@ -151,7 +162,7 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
 
         res.status(200).json({
             success: true,
-            data: { message: 'Account verified successfully', object: savedUser },
+            data: { message: 'OTP verified successfully', object: savedUser },
             error: null
         });
 
@@ -307,399 +318,8 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
     }
 });
 
-
-// {
-//     "email": "user@example.com",
-//     "type": "CREDIT_CARD",
-//     "details": {
-//         "cardType": "VISA",
-//         "lastFourDigits": "4242",
-//         "expiryDate": "12/25"
-//     },
-//     "isDefault": true
-// }
-authRouter.post('/payments', async (req: Request, res: Response) => {
-    try {
-        const { email, type, details, isDefault }: SavePaymentRequest = req.body;
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            res.status(404).json({
-                success: false,
-                error: { message: 'User not found. email: ' + email },
-                data: null
-            });
-            return;
-        }
-
-        // If setting as default, remove default flag from other payments
-        if (isDefault) {
-            await Payment.updateMany(
-                { userId: user._id },
-                { isDefault: false }
-            );
-        }
-
-        const payment = await Payment.create({
-            userId: user._id,
-            type,
-            details,
-            isDefault
-        });
-
-        res.status(201).json({
-            success: true,
-            data: { message: 'Payment is successfull', object: payment },
-            error: null
-        });
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        res.status(500).json({
-            success: false,
-            error: { message: 'Error saving payment method: ' + errorMessage },
-            data: null
-        });
-    }
-});
-
-// {
-//     "email": "user@example.com",
-//     "planId": "plan_id_here",
-//     "paymentId": "payment_id_here"
-//     "autoRenew": "true"
-// }
-authRouter.post('/subscriptions/subscribe', async (req: Request, res: Response) => {
-    try {
-        // TODO: check auto renew, for now it is false
-        const { email, planId, autoRenew }: CreateSubscriptionRequest = req.body;
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            res.status(404).json({
-                success: false,
-                error: { message: 'User not found. email: ' + email },
-                data: null
-            });
-            return;
-        }
-
-        // Check for existing active subscription
-        const existingSubscription = await Subscription.findOne({
-            userId: user._id,
-            status: SubscriptionStatus.ACTIVE
-        });
-
-        if (existingSubscription) {
-            // Auto-cancel the existing subscription
-            await Subscription.findByIdAndUpdate(
-                existingSubscription._id,
-                {
-                    status: SubscriptionStatus.CANCELLED,
-                    cancelledAt: new Date(),
-                    autoRenew: false
-                }
-            );
-        }
-
-        const plan = await Plan.findById(planId);
-        if (!plan || !plan.active) {
-            res.status(400).json({
-                success: false,
-                error: { message: 'Invalid or inactive plan' },
-                data: null
-            });
-            return;
-        }
-
-        const startDate = new Date();
-        const endDate = new Date();
-        // Set end date based on billing cycle
-        if (plan.name !== PlanType.STARTER) {
-            endDate.setMonth(endDate.getMonth() + 1);
-        }
-
-        const subscription = await Subscription.create({
-            userId: user._id,
-            planId: plan._id,
-            paymentId: null,
-            startDate,
-            endDate,
-            lastBillingDate: startDate,
-            nextBillingDate: endDate,
-            status: plan.name === PlanType.STARTER ? SubscriptionStatus.ACTIVE : SubscriptionStatus.PENDING,
-            autoRenew
-        });
-
-        res.status(201).json({
-            success: true,
-            data: { object: {...subscription, email: user.email}, message: 'Subscription is successfull' },
-            error: null
-        });
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        res.status(500).json({
-            success: false,
-            error: { message: 'Error creating subscription: ' + errorMessage },
-            data: null
-        });
-    }
-});
-
-
-// {
-//     "email": "user@example.com",
-//     "paymentId": "payment_id_here"
-// }
-authRouter.post('/subscriptions/:subscriptionId/activate', async (req: Request, res: Response) => {
-    try {
-        const { subscriptionId } = req.params;
-        const { email, paymentId } = req.body;
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            res.status(404).json({
-                success: false,
-                error: { message: 'User not found' },
-                data: null
-            });
-            return;
-        }
-
-        // Find pending subscription
-        const subscription = await Subscription.findOne({
-            _id: subscriptionId,
-            userId: user._id,
-            status: SubscriptionStatus.PENDING
-        });
-
-        if (!subscription) {
-            res.status(404).json({
-                success: false,
-                error: { message: 'Pending subscription not found' },
-                data: null
-            });
-            return;
-        }
-
-        // Verify payment method
-        const payment = await Payment.findById(paymentId);
-        if (!payment || !payment.isValid) {
-            res.status(400).json({
-                success: false,
-                error: { message: 'Invalid payment method' },
-                data: null
-            });
-            return;
-        }
-
-        // Cancel any existing active subscriptions
-        await Subscription.updateMany(
-            {
-                userId: user._id,
-                status: SubscriptionStatus.ACTIVE,
-                _id: { $ne: subscriptionId }
-            },
-            {
-                status: SubscriptionStatus.CANCELLED,
-                cancelledAt: new Date(),
-                autoRenew: false
-            }
-        );
-
-        // Activate the subscription
-        const activatedSubscription = await Subscription.findByIdAndUpdate(
-            subscriptionId,
-            {
-                status: SubscriptionStatus.ACTIVE,
-                paymentId
-            },
-            { new: true }
-        );
-
-        res.status(200).json({
-            success: true,
-            data: {
-                object: activatedSubscription,
-                message: 'Subscription activated successfully'
-            },
-            error: null
-        });
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        res.status(500).json({
-            success: false,
-            error: { message: 'Error activating subscription: ' + errorMessage },
-            data: null
-        });
-    }
-});
-
-// {
-//     "email": "user@example.com"
-// }
-authRouter.patch('/subscriptions/:subscriptionId/cancel', async (req: Request, res: Response) => {
-    try {
-        const { subscriptionId } = req.params;
-        const { email } = req.body;
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            res.status(404).json({
-                success: false,
-                error: { message: 'User not found' },
-                data: null
-            });
-            return;
-        }
-
-        const subscription = await Subscription.findOne({
-            _id: subscriptionId,
-            userId: user._id
-        });
-
-        if (!subscription) {
-            res.status(404).json({
-                success: false,
-                error: { message: 'Subscription not found' },
-                data: null
-            });
-            return;
-        }
-
-        if (subscription.status === SubscriptionStatus.CANCELLED) {
-            res.status(400).json({
-                success: false,
-                error: { message: 'Subscription is already cancelled' },
-                data: null
-            });
-            return;
-        }
-
-        const updatedSubscription = await Subscription.findByIdAndUpdate(
-            subscriptionId,
-            {
-                status: SubscriptionStatus.CANCELLED,
-                cancelledAt: new Date(),
-                autoRenew: false
-            },
-            { new: true }
-        );
-
-        res.status(200).json({
-            success: true,
-            data: {
-                object: updatedSubscription,
-                message: 'Subscription cancelled successfully'
-            },
-            error: null
-        });
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        res.status(500).json({
-            success: false,
-            error: { message: 'Error cancelling subscription: ' + errorMessage },
-            data: null
-        });
-    }
-});
-
-// {
-//     "email": "user@example.com",
-//     "currency": "EUR"
-// }
-authRouter.patch('/update-currency', async (req: Request, res: Response) => {
-    try {
-        const { email, currency }: UpdateCurrencyRequest = req.body;
-
-        // Find and verify user exists
-        const user = await User.findOne({ email });
-        if (!user) {
-            res.status(404).json({
-                success: false,
-                error: { message: 'User not found. email: ' + email },
-                data: null
-            });
-            return;
-        }
-
-        // Verify user is enabled
-        if (!user.enabled) {
-            res.status(403).json({
-                success: false,
-                error: { message: 'Account not verified. Please verify your account first.', verfication: false },
-                data: null
-            });
-            return;
-        }
-
-        // Update currency
-        const updatedUser = await User.findByIdAndUpdate(
-            user._id,
-            { currency },
-            { new: true }
-        ).select('-password');
-
-        res.status(200).json({
-            success: true,
-            data: {
-                object: updatedUser,
-                message: 'Currency updated successfully'
-            },
-            error: null
-        });
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        res.status(500).json({
-            success: false,
-            error: { message: 'Error updating currency: ' + errorMessage },
-            data: null
-        });
-    }
-});
-
-authRouter.get('/plans', async (req: Request, res: Response) => {
-    try {
-        // Get all active plans, sorted by price
-        const plans = await Plan.find({ active: true })
-            .sort({ price: 1 }) // 1 for ascending order
-            .select('-createdAt -updatedAt -__v');
-
-        if (!plans || plans.length === 0) {
-            res.status(404).json({
-                success: false,
-                error: { message: 'No active plans found' },
-                data: null
-            });
-            return;
-        }
-
-        res.status(200).json({
-            success: true,
-            data: {
-                object: plans,
-                count: plans.length,
-                message: 'Plans retrieved successfully'
-            },
-            error: null
-        });
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        res.status(500).json({
-            success: false,
-            error: { message: 'Error retrieving plans: ' + errorMessage },
-            data: null
-        });
-    }
-});
-
 authRouter.post("/google", async (req: Request, res: Response) => {
-    const { token } = req.body;
+    const { token, currency } = req.body;
 
     const googleRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
         headers: {
@@ -711,16 +331,33 @@ authRouter.post("/google", async (req: Request, res: Response) => {
     console.log("googleUser: ", googleUser)
     const { email, given_name, picture } = googleUser;
     let existingUser = await User.findOne({ email });
+    let isNewUser = false;
     if (!existingUser) {
         console.log("creating new user...")
         existingUser = await User.create({
             email,
             username: given_name,
             password: null,
-            currency: null,
+            currency: currency,
             enabled: true,
             blockedUntil: null,
         });
+
+        // Subscribe starter plan by default
+        const plan = await Plan.findOne({ name: PlanType.STARTER })
+        const now = Date.now();
+        await Subscription.create({
+            userId: existingUser._id,
+            planId: plan!._id,
+            paymentId: null,
+            startDate: now,
+            endDate: now,
+            lastBillingDate: now,
+            nextBillingDate: now,
+            status: SubscriptionStatus.ACTIVE,
+            autoRenew: false
+        });
+        isNewUser = true;
     }
 
     console.log("existing user found: ", existingUser)
@@ -757,51 +394,9 @@ authRouter.post("/google", async (req: Request, res: Response) => {
         return;
     }
     const subscription = await Subscription.findOne({ userId: existingUser._id, status: SubscriptionStatus.ACTIVE });
-    if (!subscription) {
-        res.status(401).json({
-            success: false,
-            error: null,
-            data: {
-                message: 'Please subscribe to a plan.',
-                object: {
-                    username: existingUser.username,
-                    email: existingUser.email,
-                    status: LoginStatus.SUBSCRIPTION_REQUIRED
-                }
-            }
-        });
-        return;
-    }
-    const plan = await Plan.findOne({ _id: subscription.planId });
-    if (plan!.name !== PlanType.STARTER && subscription.endDate < new Date()) {
-        res.status(401).json({
-            success: false,
-            error: null,
-            data: {
-                message: 'Your subscription has expired.',
-                object: {
-                    username: existingUser.username,
-                    email: existingUser.email,
-                    status: LoginStatus.SUBSCRIPTION_EXPIRED
-                }
-            }
-        });
-        return;
-    }
-    if (!existingUser.currency) {
-        res.status(401).json({
-            success: false,
-            error: null,
-            data: {
-                message: 'Please select your currency.',
-                object: {
-                    username: existingUser.username,
-                    email: existingUser.email,
-                    status: LoginStatus.CURRENCY_REQUIRED
-                }
-            }
-        });
-        return;
+    let plan = await Plan.findOne({ _id: subscription!.planId });
+    if (plan!.name !== PlanType.STARTER && subscription!.endDate < new Date()) {
+        plan = await Plan.findOne({ name: PlanType.STARTER })
     }
     const accessToken = generateAccessToken({ id: existingUser._id as string, role: existingUser.role })
     const refreshToken = generateRefreshToken({ id: existingUser._id as string, role: existingUser.role })
@@ -832,7 +427,7 @@ authRouter.post("/google", async (req: Request, res: Response) => {
                 accessToken: accessToken,
                 role: existingUser.role
             },
-            message: 'Login successful'
+            message: isNewUser ? 'Select you currency' : 'Login successful'
         },
         error: null
     });
@@ -848,7 +443,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                 success: false,
                 error: null,
                 data: {
-                    message: 'Invalid credentials',
+                    message: 'No account assosiated with email ' + email + ".",
                     object: {
                         status: LoginStatus.INVALID_CREDENTIALS
                     }
@@ -880,7 +475,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                     success: false,
                     error: null,
                     data: {
-                        message: 'Account not verified. Please verify your account first.',
+                        message: 'Your email not verified. Please verify your account first.',
                         object: {
                             username: user.username,
                             email: user.email,
@@ -890,52 +485,10 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                 });
                 return;
             }
-            if (!user.currency) {
-                res.status(401).json({
-                    success: false,
-                    error: null,
-                    data: {
-                        message: 'Please select your currency.',
-                        object: {
-                            username: user.username,
-                            email: user.email,
-                            status: LoginStatus.CURRENCY_REQUIRED
-                        }
-                    }
-                });
-                return;
-            }
             const subscription = await Subscription.findOne({ userId: user._id, status: SubscriptionStatus.ACTIVE });
-            if (!subscription) {
-                res.status(401).json({
-                    success: false,
-                    error: null,
-                    data: {
-                        message: 'Please subscribe to a plan.',
-                        object: {
-                            username: user.username,
-                            email: user.email,
-                            status: LoginStatus.SUBSCRIPTION_REQUIRED
-                        }
-                    }
-                });
-                return;
-            }
-            const plan = await Plan.findOne({ _id: subscription.planId });
-            if (plan!.name !== PlanType.STARTER && subscription.endDate < new Date()) {
-                res.status(401).json({
-                    success: false,
-                    error: null,
-                    data: {
-                        message: 'Your subscription has expired.',
-                        object: {
-                            username: user.username,
-                            email: user.email,
-                            status: LoginStatus.SUBSCRIPTION_EXPIRED
-                        }
-                    }
-                });
-                return;
+            let plan = await Plan.findOne({ _id: subscription!.planId });
+            if (plan!.name !== PlanType.STARTER && subscription!.endDate < new Date()) {
+                plan = await Plan.findOne({ name: PlanType.STARTER })
             }
             const accessToken = generateAccessToken({ id: user._id as string, role: user.role })
             const refreshToken = generateRefreshToken({ id: user._id as string, role: user.role })
@@ -954,7 +507,6 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                 sameSite: 'strict',
                 path: '/auth/',
             });
-
 
             res.status(200).json({
                 success: true,
@@ -1019,23 +571,14 @@ authRouter.post('/refresh_token', async (req: Request, res: Response) => {
         };
         console.log("Refresh token valid. user id: ", user.id)
         const storedUser = await User.findOne({ _id: user.id });
-        if (!storedUser) {
-            return res.status(401).send("no user found")
+        if (!storedUser || !storedUser.enabled) {
+            return res.status(401).send("no user found or disbaled")
         }
         console.log("stored user: ", storedUser)
         const subscription = await Subscription.findOne({ userId: user.id, status: SubscriptionStatus.ACTIVE });
-        if (!subscription) {
-            return res.status(401).send("no subscription found")
-        }
-        const plan = await Plan.findOne({ _id: subscription.planId });
-        if (!plan) {
-            return res.status(401).send("no plan found")
-        }
-        if (plan.name !== PlanType.STARTER && subscription.endDate < new Date()) {
-            return res.status(401).send("subscription ended")
-        }
-        if (!storedUser.currency || !storedUser.enabled) {
-            return res.status(401).send("user disbled or no currency")
+        let plan = await Plan.findOne({ _id: subscription!.planId });
+        if (plan!.name !== PlanType.STARTER && subscription!.endDate < new Date()) {
+            plan = await Plan.findOne({ name: PlanType.STARTER })
         }
         const newAccessToken = generateAccessToken({ id: storedUser._id as string, role: user.role });
         res.status(200).json({

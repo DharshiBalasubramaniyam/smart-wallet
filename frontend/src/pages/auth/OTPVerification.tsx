@@ -30,7 +30,7 @@ function OTPVerification() {
         e.preventDefault();
         if (!validateOTP(otp) || !email) return;
         setLoading(true);
-        await verifyOTP({email: email, otpCode: otp}, "/plans")
+        await verifyOTP({email: email, otpCode: otp}, "/login")
         setLoading(false);
         console.log("OTP:", otp);
     };
@@ -71,7 +71,6 @@ function OTPVerification() {
                         </div>
 
                         <div className="mt-4 flex items-center justify-between">
-                        
                             {
                                 sendingOTP ? (
                                     <button 

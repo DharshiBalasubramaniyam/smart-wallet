@@ -2,8 +2,6 @@ import { use, useEffect, useState } from "react";
 import Button from "../../components/Button";
 import { toast } from "react-toastify";
 import { AuthService } from "../../services/auth/auth.service";
-import { RootState } from "../../redux/store/store";
-import { useSelector } from "react-redux";
 import LoadingButton from "../../components/LoadingButton";
 import { useLocation } from "react-router-dom";
 
@@ -18,9 +16,9 @@ function Currency() {
    const [selectedCurrency, setSelectedCurrency] = useState<string>("");
    const [loading, setLoading] = useState(false);
    const location = useLocation();
-   const email = useSelector((state: RootState) => state.auth.email) || location.state?.email;
+   const token = location.state?.token;
 
-   const { updateCurrency } = AuthService();
+   const { loginWithGoogle } = AuthService();
 
    useEffect(() => {
       // TODO: set loading tru until fetch currencies
@@ -64,11 +62,11 @@ function Currency() {
       if (!selectedCurrency) {
          toast.error("Please select a currency!");
          return;
-      } if (!email) {
+      } if (!token) {
          return;
       }
       setLoading(true);
-      await updateCurrency({ email: email, currency: selectedCurrency }, "/register-success");
+      await loginWithGoogle({ token: token, currency: selectedCurrency })
       setLoading(false)
    };
 
@@ -104,7 +102,7 @@ function Currency() {
                      loading ? (
                         <LoadingButton text="Saving..." />
                      ) : (
-                        <Button text="Continue" onClick={onSubmit} />
+                        <Button text="Create account" onClick={onSubmit} />
                      )
                   }
                </div>

@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import authRouter from "./routes/auth";
+import planRouter from "./routes/plan";
 import { initSubscriptionJobs } from './jobs/subscription.job';
 import { connectDatabase } from './config/database';
 import path from 'path';
@@ -25,6 +26,7 @@ connectDatabase()
     .then(() => {
         // Routes
         app.use("/auth", authRouter);
+        app.use("/plan", planRouter);
 
         // Cron jobs
         initSubscriptionJobs();

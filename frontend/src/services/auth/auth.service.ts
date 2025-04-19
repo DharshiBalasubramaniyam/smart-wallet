@@ -4,7 +4,7 @@ import { PlanInfo, PlanType, RegistrationInfo, SendOtpRequest, SubscribeRequest,
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginSuccess, logout, setEmail, setIsAuthenticated, setOTPAttemptsRemaining, setToken } from '../../redux/features/auth';
+import { loginSuccess, logout, setEmail, setOTPAttemptsRemaining } from '../../redux/features/auth';
 import { UserPortalView } from '../../components/user.portal/SideBar';
 import { RootState } from '@/redux/store/store';
 
@@ -56,7 +56,7 @@ export function AuthService() {
 
     async function getAllPlans(): Promise<PlanInfo[]> {
         try {
-            const response = await api.get(`auth/plans`);
+            const response = await api.get(`plan/all`);
             console.log(response.data)
             if (response.data.success) {
                 return response.data.data.object as PlanInfo[];
@@ -133,10 +133,17 @@ export function AuthService() {
                 navigate(`/user-portal/${UserPortalView.DASHBOARD}`);
             }
         } catch (error) {
-            // TODO: Catch different login error types: account not verified, subscription not found etc.
             if (axios.isAxiosError(error) && error.response) {
                 const errorMessage = error.response.data?.data?.message || "An error occurred while processing your request.";
-                toast.error(errorMessage);
+                const status = error.response.data?.data?.object.status
+                if (status === LoginStatus.BLOCKED || status === LoginStatus.INVALID_CREDENTIALS) {
+                    toast.error(errorMessage);
+                } else if (status === LoginStatus.VERIFICATION_REQUIRED) {
+                    toast.error(errorMessage);
+                    await sendOTP({email: body.email })
+                } else {
+                    processError(error)
+                }
             } else {
                 toast.error("An unexpected error occurred. Please try again later.");
             }
@@ -144,7 +151,7 @@ export function AuthService() {
         }
     }
 
-    async function loginWithGoogle(body: {token: string}) {
+    async function loginWithGoogle(body: {token: string, currency: string}) {
         try {
             const response = await api.post(`auth/google`, body, { withCredentials: true });
             console.log(response.data)
@@ -162,20 +169,17 @@ export function AuthService() {
                 navigate(`/user-portal/${UserPortalView.DASHBOARD}`);
             }
         } catch (error) {
-            // TODO: Catch different login error types: account not verified, subscription not found etc.
             if (axios.isAxiosError(error) && error.response) {
                 const errorMessage = error.response.data?.data?.message || "An error occurred while processing your request.";
                 const status = error.response.data?.data?.object.status
                 if (status === LoginStatus.BLOCKED || status === LoginStatus.INVALID_CREDENTIALS) {
-                } else if (status === LoginStatus.CURRENCY_REQUIRED) {
-                    navigate('/currency', { state: { email: error.response.data?.data?.object.email } });
-                    dispatch(setEmail(error.response.data?.data?.object.email))
-                } else if (status === LoginStatus.SUBSCRIPTION_REQUIRED || status === LoginStatus.SUBSCRIPTION_EXPIRED) {
-                    console.log(error.response.data?.data?.object.email ?? "Email not available")
-                    dispatch(setEmail(error.response.data?.data?.object.email))
-                    navigate('/plans', { state: { email: error.response.data?.data?.object.email } });
+                    toast.error(errorMessage);
+                } else if (status === LoginStatus.VERIFICATION_REQUIRED) {
+                    toast.error(errorMessage);
+                    await sendOTP({email: error.response.data?.data?.object.email })
+                } else {
+                    processError(error)
                 }
-                toast.info(errorMessage);
             } else {
                 toast.error("An unexpected error occurred. Please try again later.");
             }
