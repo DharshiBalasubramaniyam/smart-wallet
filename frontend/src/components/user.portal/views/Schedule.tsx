@@ -1,203 +1,87 @@
 import Button from "../../Button";
 import Input from "../../Input";
 import { useEffect, useState } from 'react';
-import { CategoryInfo, TransactionInfo } from "../../../interfaces/modals"
+import { CategoryInfo, ContinueType, Frequency, RecurringApproval, Repeat, ScheduleInfo, TransactionInfo } from "../../../interfaces/modals"
 import { toast } from 'react-toastify';
 import { toStrdSpaceType } from "../../../utils/utils";
-import { SpaceType } from "./Spaces";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../redux/store/store";
 import { CategoryService } from "../../../services/category.service";
-import { TransactionService } from "../../../services/transaction.service";
 import { FaEdit, FaInfoCircle, FaTimes, FaTrash } from "react-icons/fa"
-import TransactionList from "./Transactions/TransactionList";
+import { TransactionType, transactionTypesInfo } from "./Transactions";
+import { ScheduleService } from "../../../services/schedule.service";
+import ScheduleList from "./Schedules/ScheduleList";
 
-export enum TransactionType {
-   EXPENSE = 'EXPENSE',
-   INCOME = 'INCOME',
-   INTERNAL_TRANSFER = 'INTERNAL_TRANSFER',
-   PRINCIPAL_REPAYMENT_RECEIVED = 'PRINCIPAL_REPAYMENT_RECEIVED',
-   PRINCIPAL_REPAYMENT_PAID = 'PRINCIPAL_REPAYMENT_PAID',
-   INTEREST_RECEIVED = 'INTEREST_RECEIVED',
-   INTEREST_PAID = 'INTEREST_PAID',
-   REFUND = 'REFUND',
-   PURCHASE = 'PURCHASE',
-   BILL_PAYMENT = "BILL_PAYMENT",
-   BALANCE_TRANSFER = "BALANCE_TRANSFER",
-   WITHDRAW_CASH = "WITHDRAW_CASH",
-   INTEREST_CHARGED = "INTEREST_CHARGED",
-   LOAN_PRINCIPAL = "LOAN_PRINCIPAL"
-}
-
-export interface transactionTypeInfo {
-   spaceType: SpaceType;
-   transactionTypes: {
-      type: TransactionType;
-      fromSpaces: string[];
-      toSpaces: string[];
-   }[];
-}
-
-export const transactionTypesInfo: transactionTypeInfo[] = [
-   {
-      spaceType: SpaceType.CASH,
-      transactionTypes: [
-         {
-            type: TransactionType.EXPENSE,
-            fromSpaces: ["ACTIVE_SPACE"],
-            toSpaces: ["OUTSIDE_MYWALLET"],
-         },
-         {
-            type: TransactionType.INCOME,
-            fromSpaces: ["OUTSIDE_MYWALLET"],
-            toSpaces: ["ACTIVE_SPACE"]
-         },
-         {
-            type: TransactionType.INTERNAL_TRANSFER,
-            fromSpaces: ["ACTIVE_SPACE"],
-            toSpaces: [SpaceType.CASH, SpaceType.BANK]
-         }
-      ]
-   },
-   {
-      spaceType: SpaceType.BANK,
-      transactionTypes: [
-         {
-            type: TransactionType.EXPENSE,
-            fromSpaces: ["ACTIVE_SPACE"],
-            toSpaces: ["OUTSIDE_MYWALLET"]
-         },
-         {
-            type: TransactionType.INCOME,
-            fromSpaces: ["OUTSIDE_MYWALLET"],
-            toSpaces: ["ACTIVE_SPACE"]
-         },
-         {
-            type: TransactionType.INTERNAL_TRANSFER,
-            fromSpaces: ["ACTIVE_SPACE"],
-            toSpaces: [SpaceType.CASH, SpaceType.BANK]
-         }
-      ]
-   },
-   {
-      spaceType: SpaceType.CREDIT_CARD,
-      transactionTypes: [
-         {
-            type: TransactionType.PURCHASE, // increase
-            toSpaces: ["ACTIVE_SPACE"],
-            fromSpaces: ["OUTSIDE_MYWALLET"]
-         },
-         {
-            type: TransactionType.INTEREST_CHARGED, // increase
-            toSpaces: ["ACTIVE_SPACE"],
-            fromSpaces: ["OUTSIDE_MYWALLET"]
-         },
-         // {
-         //    type: TransactionType.WITHDRAW_CASH, // increase
-         //    toSpaces: ["ACTIVE_SPACE"],
-         //    fromSpaces: ["OUTSIDE_MYWALLET"]
-         // },
-         {
-            type: TransactionType.BILL_PAYMENT, // decrease
-            fromSpaces: [SpaceType.CASH, SpaceType.BANK],
-            toSpaces: ["ACTIVE_SPACE"]
-         },
-         // {
-         //    type: TransactionType.BALANCE_TRANSFER, // decrease
-         //    fromSpaces: ["ACTIVE_SPACE"],
-         //    toSpaces: [SpaceType.CREDIT_CARD]
-         // },
-         {
-            type: TransactionType.REFUND, // decrease
-            fromSpaces: ["OUTSIDE_MYWALLET"],
-            toSpaces: ["ACTIVE_SPACE"]
-         },
-      ]
-   },
-   {
-      spaceType: SpaceType.LOAN_LENT,
-      transactionTypes: [
-         {
-            type: TransactionType.PRINCIPAL_REPAYMENT_RECEIVED,
-            fromSpaces: ["ACTIVE_SPACE"],
-            toSpaces: [SpaceType.CASH, SpaceType.BANK]
-         },
-         {
-            type: TransactionType.INTEREST_RECEIVED,
-            toSpaces: [SpaceType.CASH, SpaceType.BANK],
-            fromSpaces: ["ACTIVE_SPACE"]
-         },
-      ]
-   },
-   {
-      spaceType: SpaceType.LOAN_BORROWED,
-      transactionTypes: [
-         {
-            type: TransactionType.PRINCIPAL_REPAYMENT_PAID,
-            toSpaces: ["ACTIVE_SPACE"],
-            fromSpaces: [SpaceType.CASH, SpaceType.BANK]
-         },
-         {
-            type: TransactionType.INTEREST_PAID,
-            fromSpaces: [SpaceType.CASH, SpaceType.BANK],
-            toSpaces: ["ACTIVE_SPACE"]
-         },
-      ]
-   },
-]
-
-function Transactions() {
+function Schedule() {
 
    const { spacetype, spaceid } = useParams()
    const { spaces } = useSelector((state: RootState) => state.auth)
-   const [inputs, setInputs] = useState<TransactionInfo>({ type: "", amount: 0.0, from: null, to: null, date: getTodayDate(), note: "", scategory: null, pcategory: null });
+   const [inputs, setInputs] = useState<ScheduleInfo>({
+      type: "",
+      amount: 0.0,
+      from: null,
+      to: null,
+      note: "",
+      scategory: null,
+      pcategory: null,
+      frequency: "",
+      startDate: getTodayDate(),
+      repeat: Repeat.DAY,
+      interval: 1,
+      recurringApproval: RecurringApproval.AUTO,
+      continue: ContinueType.FOREVER,
+      endDate: null,
+      isClosed: false
+   });
    const [newOrEditMode, setNewMode] = useState<boolean>(false)
    const [viewMode, setViewMode] = useState<boolean>(false)
    const [editId, setEditId] = useState<string | null>(null)
-   const [canEditTransaction, setCanEditTransaction] = useState<boolean>(false)
-   const [transactions, setTransactions] = useState<any[]>([])
+   const [canEditSchedule, setCanEditSchedule] = useState<boolean>(false)
+   const [schedules, setSchedules] = useState<any[]>([])
    const [total, setTotal] = useState<any>(0)
    const [categories, setCategories] = useState<CategoryInfo[]>([])
    const [page, setPage] = useState<number>(1);
    const [loading, setLoading] = useState<boolean>(false)
    const spaceInfo = transactionTypesInfo.find(info => toStrdSpaceType(spacetype) === info.spaceType) || null
-   const { createTransaction, editTransaction, deleteTransaction, getTransactionsByUser } = TransactionService();
+   // const { createTransaction, editTransaction, deleteTransaction, getTransactionsByUser } = TransactionService();
+   const { createSchedule, deleteSchedule, editSchedule, getSchedulesByUser, confirmSchedule, skipSchedule } = ScheduleService();
    const { getCategories } = CategoryService();
    const pageLimit = 10;
 
-   const onView = (transaction: any) => {
-      const info: TransactionInfo = {
-         amount: transaction.amount.$numberDecimal,
-         date: transaction.date.split("T")[0],
-         from: transaction.from,
-         to: transaction.to,
-         note: transaction.note,
-         pcategory: transaction.pcategory,
-         scategory: transaction.scategory,
-         type: transaction.type,
-         scheduleId: transaction?.scheduleId || null
+   const onView = (schedule: any) => {
+      const info: ScheduleInfo = {
+         amount: schedule.amount.$numberDecimal,
+         startDate: schedule.nextDueDate?.split("T")[0] || schedule.startDate?.split("T")[0],
+         from: schedule.from,
+         to: schedule.to,
+         note: schedule.note,
+         pcategory: schedule.pcategory,
+         scategory: schedule.scategory,
+         type: schedule.type,
+         frequency: schedule.recurrent ? Frequency.RECURRENT : Frequency.ONE_TIME,
+         repeat: schedule.repeat,
+         interval: schedule.interval,
+         recurringApproval: schedule.isAutomated ? RecurringApproval.AUTO : RecurringApproval.MANUAL,
+         continue: schedule.endDate ? ContinueType.UNTIL_A_DATE : ContinueType.FOREVER,
+         endDate: schedule.endDate ? schedule.endDate.split("T")[0] : null,
+         isClosed: !schedule.isActive
       }
-      console.log(transaction, info);
+      console.log(schedule, info);
       setInputs(info)
-      setEditId(transaction._id)
-      setCanEditTransaction(
-         transactionTypesInfo
-            .find(info => info.spaceType === toStrdSpaceType(spacetype))
-            ?.transactionTypes
-            .map(type => type.type).includes(transaction.type) || false
-         )
+      setEditId(schedule._id)
+      setCanEditSchedule(schedule.isActive)
       setViewMode(true)
    }
 
    const onNewOrEditMode = () => {
-      setViewMode(false)
+      setViewMode(false);
       setNewMode(true);
    }
 
    const onInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target as HTMLInputElement;
-      setInputs((prev: TransactionInfo) => {
+      setInputs((prev: ScheduleInfo) => {
          return { ...prev, [name]: value }
       });
    }
@@ -238,19 +122,19 @@ function Transactions() {
          const scategory = pcategory?.subCategories.find((cat) => cat.name === "bills")
          finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
       }
-
+      console.log(finalInputs)
       setLoading(true)
       if (editId) {
-         await editTransaction(editId, finalInputs)
+         await editSchedule(editId, finalInputs)
       } else {
-         await createTransaction(finalInputs)
+         await createSchedule(finalInputs)
       }
-      getTransactionsByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
+      getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
          .then(res => {
-            setTransactions(res.transactions)
+            setSchedules(res.schedules)
             setTotal(res.total)
          })
-         .catch(err => setTransactions([]))
+         .catch(err => setSchedules([]))
          .finally(() => {
             setLoading(false);
          });
@@ -260,24 +144,67 @@ function Transactions() {
    const onDelete = async () => {
       if (!editId) return;
       setLoading(true)
-      await deleteTransaction(editId)
-      getTransactionsByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
+      await deleteSchedule(editId)
+      getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
          .then(res => {
-            setTransactions(res.transactions)
+            setSchedules(res.schedules)
             setTotal(res.total)
          })
-         .catch(err => setTransactions([]))
+         .catch(err => setSchedules([]))
          .finally(() => {
             setLoading(false);
          });
       onCancel();
    }
 
+   const onConfirm = async (id: string) => {
+      setLoading(true)
+      await confirmSchedule(id)
+      getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
+         .then(res => {
+            setSchedules(res.schedules)
+            setTotal(res.total)
+         })
+         .catch(err => setSchedules([]))
+         .finally(() => {
+            setLoading(false);
+         });
+   }
+
+   const onSkip = async (id: string) => {
+      setLoading(true)
+      await skipSchedule(id)
+      getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
+         .then(res => {
+            setSchedules(res.schedules)
+            setTotal(res.total)
+         })
+         .catch(err => setSchedules([]))
+         .finally(() => {
+            setLoading(false);
+         });
+   }
+
    const onCancel = () => {
       setViewMode(false)
       setNewMode(false)
       setEditId(null)
-      setInputs({ type: "", amount: 0.0, from: null, to: null, date: getTodayDate(), note: "", scategory: null, pcategory: null })
+      setInputs({
+         type: "",
+         amount: 0.0,
+         from: null,
+         to: null,
+         note: "",
+         scategory: null,
+         pcategory: null,
+         frequency: "",
+         startDate: getTodayDate(),
+         repeat: Repeat.DAY,
+         interval: 1,
+         recurringApproval: RecurringApproval.AUTO,
+         continue: ContinueType.FOREVER,
+         endDate: null
+      })
    }
 
    useEffect(() => {
@@ -288,12 +215,12 @@ function Transactions() {
       }
       fetchCategories();
       setLoading(true)
-      getTransactionsByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
+      getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
          .then(res => {
-            setTransactions(res.transactions)
+            setSchedules(res.schedules)
             setTotal(res.total)
          })
-         .catch(err => setTransactions([]))
+         .catch(err => setSchedules([]))
          .finally(() => {
             setLoading(false);
          });
@@ -322,12 +249,12 @@ function Transactions() {
 
    useEffect(() => {
       setLoading(true)
-      getTransactionsByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
+      getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
          .then(res => {
-            setTransactions(res.transactions)
+            setSchedules(res.schedules)
             setTotal(res.total)
          })
-         .catch(err => setTransactions([]))
+         .catch(err => setSchedules([]))
          .finally(() => {
             setLoading(false);
          });
@@ -341,13 +268,13 @@ function Transactions() {
       <>
          {/* sub header */}
          <div className="flex justify-between items-center">
-            <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Transactions</h1>
+            <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Schedules</h1>
             <div className="flex justify-end gap-3 items-center">
                {
-                  (!loading && transactions.length != 0) && (
+                  (!loading && schedules?.length != 0) && (
                      <>
                         <Button
-                           text={`${(page - 1) * pageLimit + 1}-${(page - 1) * pageLimit + (transactions?.length)} of ${total}`}
+                           text={`${(page - 1) * pageLimit + 1}-${(page - 1) * pageLimit + (schedules?.length)} of ${total}`}
                            className="max-w-fit bg-transparent pointer-events-none"
                            onClick={() => { }}
                         />
@@ -372,14 +299,14 @@ function Transactions() {
                }
 
                <Button
-                  text="New Transaction"
+                  text="New Schedule"
                   className="max-w-fit"
                   onClick={onNewOrEditMode}
                />
             </div>
          </div>
 
-         {/* new or edit transaction */}
+         {/* new or edit schedule */}
          {
             newOrEditMode && (
                <div
@@ -389,12 +316,12 @@ function Transactions() {
                      className="relative w-full max-w-lg rounded-lg bg-bg-light-secondary dark:bg-bg-dark-secondary shadow-sm p-3"
                   >
                      <div className="flex shrink-0 items-center pb-4 text-xl font-medium text-text-light-primary dark:text-text-dark-primary">
-                        {editId ? "Edit Transaction" : "New Transaction"}
+                        {editId ? "Edit Schedule" : "New Schedule"}
                      </div>
                      <form className="border-t border-b border-border-light-primary dark:border-border-dark-primary" onSubmit={onSubmit}>
                         {/* type */}
                         <div className="my-3">
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Type:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Type:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
                               value={inputs.type}
@@ -419,7 +346,7 @@ function Transactions() {
 
                         {/* from */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">From space:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">From space:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50 disabled *:capitalize capitalize"
                               value={inputs.from || ""}
@@ -462,7 +389,7 @@ function Transactions() {
 
                         {/* to */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">To space:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">To space:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50 *:capitalize capitalize"
                               value={inputs.to || ""}
@@ -505,7 +432,7 @@ function Transactions() {
 
                         {/* p category */}
                         <div className={inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Category:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
                               value={inputs.pcategory || ""}
@@ -550,7 +477,7 @@ function Transactions() {
 
                         {/* sub category */}
                         <div className={(inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE) && inputs.pcategory != null ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Sub Category:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Sub Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
                               value={inputs.scategory || ""}
@@ -574,7 +501,7 @@ function Transactions() {
 
                         {/* amount */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Amount:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Amount:</label>
                            <Input
                               name="amount"
                               type="number"
@@ -585,26 +512,150 @@ function Transactions() {
                            />
                         </div>
 
+                        {/* frequency */}
+                        <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Frequency:</label>
+                           <select
+                              className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
+                              value={inputs.frequency || ""}
+                              name="frequency"
+                              onChange={onInputChange}
+                           >
+                              <option value="">Select frequency</option>
+                              {
+                                 Object.values(Frequency).map(freq => {
+                                    return (
+                                       <option value={freq} className="capitalize">
+                                          {freq.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
+                           </select>
+                        </div>
+
                         {/* date */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Date:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">{inputs.frequency === Frequency.RECURRENT ? (editId ? "Next due date" : "Start date") : "Date"} :</label>
                            <Input
-                              name="date"
+                              name="startDate"
                               type="date"
-                              placeholder="Enter amount"
-                              value={inputs.date.toString()}
+                              placeholder="Enter date"
+                              value={inputs.startDate.toString()}
                               onChange={onInputChange}
                               className="mt-1 mb-1"
+                              id="startDate"
+                              min={getTodayDate()}
                            />
                         </div>
+
+                        {/* repeat */}
+                        <div className={inputs.type != "" && inputs.frequency === Frequency.RECURRENT ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Repeat:</label>
+                           <div className="flex items-center gap-2">
+                              <div className="text-text-light-primary dark:text-text-dark-primary w-full">For every</div>
+                              <Input
+                                 name="interval"
+                                 type="number"
+                                 placeholder="Enter interval"
+                                 value={inputs.interval.toString()}
+                                 onChange={onInputChange}
+                                 className="mt-1 mb-1"
+                              />
+                              <select
+                                 className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
+                                 value={inputs.repeat || ""}
+                                 name="repeat"
+                                 onChange={onInputChange}
+                              >
+                                 {
+                                    Object.values(Repeat).map(repeat => {
+                                       return (
+                                          <option value={repeat} className="capitalize">
+                                             {repeat.split("_").join(" ") + (inputs.interval > 1 ? "S" : "")}
+                                          </option>
+                                       )
+                                    })
+                                 }
+                              </select>
+                           </div>
+                        </div>
+
+                        {/* Recurring Approval */}
+                        <div className={inputs.type != ""  ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Do you want to create schedules automatically for future schedules?:</label>
+                           <div className="mt-2 flex gap-2 items-center justify-start">
+                              <input
+                                 name="recurringApproval"
+                                 type="radio"
+                                 placeholder=""
+                                 checked={inputs.recurringApproval === RecurringApproval.AUTO}
+                                 value={RecurringApproval.AUTO}
+                                 onChange={onInputChange}
+                                 className="mt-1 mb-1 w-fit"
+                                 id={RecurringApproval.AUTO}
+                              />
+                              <label htmlFor={RecurringApproval.AUTO} className="text-text-light-secondary dark:text-text-dark-secondary">Yes (Upcoming schedules will be converted to schedules automatically.)</label>
+                           </div>
+                           <div className="flex gap-2 items-center justify-start">
+                              <input
+                                 name="recurringApproval"
+                                 type="radio"
+                                 placeholder=""
+                                 checked={inputs.recurringApproval === RecurringApproval.MANUAL}
+                                 value={RecurringApproval.MANUAL}
+                                 onChange={onInputChange}
+                                 className="mt-1 mb-1 w-fit"
+                                 id={RecurringApproval.MANUAL}
+                              />
+                              <label htmlFor={RecurringApproval.MANUAL} className="text-text-light-secondary dark:text-text-dark-secondary">No (Upcoming schedules will will wait for your approving.)</label>
+                           </div>
+                        </div>
+
+                        {/* continue */}
+                        <div className={inputs.type != "" && inputs.frequency === Frequency.RECURRENT ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Continue till:</label>
+                           <select
+                              className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
+                              value={inputs.continue || ""}
+                              name="continue"
+                              onChange={onInputChange}
+                           >
+                              {
+                                 Object.values(ContinueType).map(freq => {
+                                    return (
+                                       <option value={freq} className="capitalize">
+                                          {freq.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
+                           </select>
+                        </div>
+
+                        {/* endDate */}
+                        <div className={inputs.type != "" && inputs.frequency === Frequency.RECURRENT && inputs.continue === ContinueType.UNTIL_A_DATE ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">End date:</label>
+                           <Input
+                              name="endDate"
+                              type="date"
+                              placeholder="Enter date"
+                              value={inputs.endDate?.toString() || ""}
+                              onChange={onInputChange}
+                              className="mt-1 mb-1"
+                              id="endDate"
+                              min={inputs.startDate}
+                           />
+                        </div>
+
                         {/* note */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Note(*):</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Note(*) :</label>
                            <Input
                               name="note"
                               type="text"
-                              placeholder="Enter note (optional)"
-                              value={inputs.note}
+                              placeholder="Enter Note (optional)"
+                              value={inputs.note.toString()}
                               onChange={onInputChange}
                               className="mt-1 mb-1"
                            />
@@ -641,22 +692,22 @@ function Transactions() {
                         View Transaction
                         <div className="flex gap-2">
                            {
-                              canEditTransaction && (
+                              canEditSchedule && (
                                  <>
                                     <Button
                                        text={<FaEdit />}
                                        onClick={onNewOrEditMode}
                                        className="max-w-fit pt-2 pb-2"
                                     />
-                                    <Button
-                                       text={<FaTrash />}
-                                       onClick={onDelete}
-                                       className="max-w-fit pt-2 pb-2 hover:!bg-red-600 !bg-red-500"
-                                    />
+
                                  </>
                               )
                            }
-
+                           <Button
+                              text={<FaTrash />}
+                              onClick={onDelete}
+                              className="max-w-fit pt-2 pb-2 hover:!bg-red-600 !bg-red-500"
+                           />
                            <Button
                               text={<FaTimes />}
                               onClick={onCancel}
@@ -665,11 +716,11 @@ function Transactions() {
                         </div>
                      </div>
                      <form className="border-t border-border-light-primary dark:border-border-dark-primary" onSubmit={onSubmit}>
-                        {!canEditTransaction && <div className="w-full text-text-light-primary dark:text-text-dark-primary flex p-1 items-center border border-yellow-700 gap-3 rounded *:text-xs"> <FaInfoCircle/> This transaction is managed via one of your other spaces.</div>}
-                        
+                        {!canEditSchedule && <div className="w-full text-text-light-primary dark:text-text-dark-primary flex p-1 items-center border border-yellow-700 gap-3 rounded *:text-xs"> <FaInfoCircle /> This schedule is closed.</div>}
+
                         {/* type */}
                         <div className="my-3">
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Type:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Type:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
                               value={inputs.type}
@@ -691,7 +742,7 @@ function Transactions() {
 
                         {/* from */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">From space:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">From space:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50 *:capitalize capitalize"
                               value={inputs.from || ""}
@@ -715,7 +766,7 @@ function Transactions() {
 
                         {/* to */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">To space:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">To space:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm *:capitalize capitalize disabled:opacity-50"
                               value={inputs.to || ""}
@@ -739,7 +790,7 @@ function Transactions() {
 
                         {/* p category */}
                         <div className={inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Category:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
                               value={inputs.pcategory || ""}
@@ -760,7 +811,7 @@ function Transactions() {
 
                         {/* sub category */}
                         <div className={(inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE) && inputs.pcategory != null ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Sub Category:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Sub Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
                               value={inputs.scategory || ""}
@@ -784,7 +835,7 @@ function Transactions() {
 
                         {/* amount */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Amount:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Amount:</label>
                            <Input
                               name="amount"
                               type="number"
@@ -796,22 +847,153 @@ function Transactions() {
                            />
                         </div>
 
+                        {/* frequency */}
+                        <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Frequency:</label>
+                           <select
+                              className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
+                              value={inputs.frequency || ""}
+                              name="frequency"
+                              onChange={onInputChange}
+                              disabled={true}
+                           >
+                              <option value="">Select frequency</option>
+                              {
+                                 Object.values(Frequency).map(freq => {
+                                    return (
+                                       <option value={freq} className="capitalize">
+                                          {freq.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
+                           </select>
+                        </div>
+
                         {/* date */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Date:</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">{inputs.frequency === Frequency.RECURRENT && inputs.isClosed ? "Next Due date" : "Date"} :</label>
                            <Input
-                              name="date"
+                              name="startDate"
                               type="date"
-                              placeholder="Enter amount"
-                              value={inputs.date.toString()}
-                              onChange={() => { }}
+                              placeholder="Enter date"
+                              value={inputs.startDate.toString()}
+                              onChange={onInputChange}
                               className="mt-1 mb-1 disabled:opacity-50"
+                              id="startDate"
+                              min={getTodayDate()}
                               disabled={true}
                            />
                         </div>
+
+                        {/* repeat */}
+                        <div className={inputs.type != "" && inputs.frequency === Frequency.RECURRENT ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Repeat:</label>
+                           <div className="flex items-center gap-2">
+                              <div className="text-text-light-primary dark:text-text-dark-primary w-full">For every</div>
+                              <Input
+                                 name="interval"
+                                 type="number"
+                                 placeholder="Enter interval"
+                                 value={inputs.interval.toString()}
+                                 onChange={onInputChange}
+                                 className="mt-1 mb-1 disabled:opacity-50"
+                                 disabled={true}
+                              />
+                              <select
+                                 className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
+                                 value={inputs.repeat || ""}
+                                 name="repeat"
+                                 onChange={onInputChange}
+                                 disabled={true}
+                              >
+                                 {
+                                    Object.values(Repeat).map(repeat => {
+                                       return (
+                                          <option value={repeat} className="capitalize">
+                                             {repeat.split("_").join(" ") + (inputs.interval > 1 ? "S" : "")}
+                                          </option>
+                                       )
+                                    })
+                                 }
+                              </select>
+                           </div>
+                        </div>
+
+                        {/* Recurring Approval */}
+                        <div className={inputs.type != "" && inputs.frequency === Frequency.RECURRENT ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Do you want to create schedules automatically for future schedules?:</label>
+                           <div className="mt-2 flex gap-2 items-center justify-start">
+                              <input
+                                 name="recurringApproval"
+                                 type="radio"
+                                 placeholder=""
+                                 checked={inputs.recurringApproval === RecurringApproval.AUTO}
+                                 value={RecurringApproval.AUTO}
+                                 onChange={onInputChange}
+                                 className="mt-1 mb-1 w-fit"
+                                 id={RecurringApproval.AUTO}
+                                 disabled={inputs.recurringApproval !== RecurringApproval.AUTO}
+                              />
+                              <label htmlFor={RecurringApproval.AUTO} className="text-text-light-secondary dark:text-text-dark-secondary">Yes (Upcoming schedules will be converted to schedules automatically.)</label>
+                           </div>
+                           <div className="flex gap-2 items-center justify-start">
+                              <input
+                                 name="recurringApproval"
+                                 type="radio"
+                                 placeholder=""
+                                 value={RecurringApproval.MANUAL}
+                                 checked={inputs.recurringApproval === RecurringApproval.MANUAL}
+                                 onChange={onInputChange}
+                                 className="mt-1 mb-1 w-fit"
+                                 id={RecurringApproval.MANUAL}
+                                 disabled={inputs.recurringApproval !== RecurringApproval.MANUAL}
+                              />
+                              <label htmlFor={RecurringApproval.MANUAL} className="text-text-light-secondary dark:text-text-dark-secondary">No (Upcoming schedules will will wait for your approving.)</label>
+                           </div>
+                        </div>
+
+                        {/* continue */}
+                        <div className={inputs.type != "" && inputs.frequency === Frequency.RECURRENT ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Continue till:</label>
+                           <select
+                              className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
+                              value={inputs.continue || ""}
+                              name="continue"
+                              onChange={onInputChange}
+                              disabled={true}
+                           >
+                              {
+                                 Object.values(ContinueType).map(freq => {
+                                    return (
+                                       <option value={freq} className="capitalize">
+                                          {freq.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
+                           </select>
+                        </div>
+
+                        {/* endDate */}
+                        <div className={inputs.type != "" && inputs.frequency === Frequency.RECURRENT && inputs.continue === ContinueType.UNTIL_A_DATE ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">End date:</label>
+                           <Input
+                              name="endDate"
+                              type="date"
+                              placeholder="Enter date"
+                              value={inputs.endDate?.toString() || ""}
+                              onChange={onInputChange}
+                              className="mt-1 mb-1"
+                              id="endDate"
+                              min={inputs.startDate}
+                              disabled={true}
+                           />
+                        </div>
+
                         {/* note */}
                         <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary">Note(*):</label>
+                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Note(*):</label>
                            <Input
                               name="note"
                               type="text"
@@ -830,14 +1012,16 @@ function Transactions() {
 
          {/* loading */}
          {
-            (!loading && transactions.length == 0) && <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary text-center mt-48">No transactions found!</h1>
+            (!loading && schedules?.length == 0) && <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary text-center mt-48">No schedules found!</h1>
          }
 
          {/* transaction list */}
-         <TransactionList
-            transactions={transactions}
+         <ScheduleList
+            schedules={schedules}
             categories={categories}
             onClick={onView}
+            onConfirm={onConfirm}
+            onSkip={onSkip}
          />
       </>
    )
@@ -854,4 +1038,4 @@ function getTodayDate() {
    return localDate;
 }
 
-export default Transactions;
+export default Schedule;

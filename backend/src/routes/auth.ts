@@ -1,18 +1,18 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import User from '../models/user';
 import OTP from '../models/otp';
 import jwt from 'jsonwebtoken';
-import { CreateAccountRequest, CreateSubscriptionRequest, SavePaymentRequest, UpdateCurrencyRequest, VerifyOTPRequest } from '../interfaces/requests';
+import { CreateAccountRequest, VerifyOTPRequest, CreateSpaceRequest } from '../interfaces/requests';
 import { generateOTP } from '../utils/otp.util';
 import { sendOTPEmail } from '../services/email.service';
 import Plan, { PlanType } from '../models/plan';
-import Payment from '../models/payment';
 import Subscription, { SubscriptionStatus } from '../models/subscription';
 import { LoginStatus } from '../interfaces/responses';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.util';
 import dotenv from 'dotenv';
 import { authenticate } from '../middlewares/auth';
+import Space, {SpaceType} from '../models/space';
 
 dotenv.config();
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
@@ -77,7 +77,7 @@ authRouter.post('/register', async (req: Request, res: Response) => {
             success: true,
             data: {
                 object: userResponse,
-                message: 'Account is created. Please verify your account.'
+                message: 'Account is created. Please verify your email.'
             },
             error: null
         });
@@ -159,6 +159,13 @@ authRouter.post('/verify-otp', async (req: Request, res: Response) => {
 
         // Delete used OTP
         await OTP.deleteOne({ _id: otp._id });
+
+        const space = await Space.create({
+            ownerId: savedUser?._id,
+            type: SpaceType.CASH,
+            isDefault: true,
+            name: "cash in hand"
+        })
 
         res.status(200).json({
             success: true,
@@ -357,6 +364,14 @@ authRouter.post("/google", async (req: Request, res: Response) => {
             status: SubscriptionStatus.ACTIVE,
             autoRenew: false
         });
+
+        const space = await Space.create({
+            ownerId: existingUser._id,
+            type: SpaceType.CASH,
+            isDefault: true,
+            name: "cash in hand"
+        })
+
         isNewUser = true;
     }
 
@@ -416,6 +431,8 @@ authRouter.post("/google", async (req: Request, res: Response) => {
         path: '/auth/',
     });
 
+    const spaces = await Space.find({ownerId: existingUser._id})
+
     res.status(200).json({
         success: true,
         data: {
@@ -425,9 +442,10 @@ authRouter.post("/google", async (req: Request, res: Response) => {
                 currency: existingUser.currency,
                 plan: plan!.name,
                 accessToken: accessToken,
-                role: existingUser.role
+                role: existingUser.role,
+                spaces: spaces
             },
-            message: isNewUser ? 'Select you currency' : 'Login successful'
+            message: isNewUser ? 'Select your currency' : 'Login successful'
         },
         error: null
     });
@@ -508,6 +526,8 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                 path: '/auth/',
             });
 
+            const spaces = await Space.find({ownerId: user._id})
+
             res.status(200).json({
                 success: true,
                 data: {
@@ -517,7 +537,8 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                         currency: user.currency,
                         plan: plan!.name,
                         accessToken: accessToken,
-                        role: user.role
+                        role: user.role,
+                        spaces: spaces
                     },
                     message: 'Login successful'
                 },
@@ -581,6 +602,7 @@ authRouter.post('/refresh_token', async (req: Request, res: Response) => {
             plan = await Plan.findOne({ name: PlanType.STARTER })
         }
         const newAccessToken = generateAccessToken({ id: storedUser._id as string, role: user.role });
+        const spaces = await Space.find({ownerId: storedUser._id})
         res.status(200).json({
             success: true,
             data: {
@@ -590,7 +612,8 @@ authRouter.post('/refresh_token', async (req: Request, res: Response) => {
                     currency: storedUser.currency,
                     plan: plan!.name,
                     accessToken: newAccessToken,
-                    role: storedUser.role
+                    role: storedUser.role,
+                    spaces: spaces
                 },
                 message: 'Refresh successful'
             },

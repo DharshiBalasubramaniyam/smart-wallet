@@ -9,5 +9,6 @@ export interface AuthState {
     currency: string|null;
     plan: PlanType|null;
     role: UserRole|null;
+    spaces: {id: string, name: string, type: s.type}[]
 }
 

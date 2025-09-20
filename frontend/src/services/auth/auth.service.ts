@@ -119,6 +119,17 @@ export function AuthService() {
             const response = await api.post(`auth/login`, body, { withCredentials: true });
             console.log(response.data)
             if (response.data.success) {
+                const spacesInfo: any[] = response.data.data.object.spaces
+                const spaces: {id: string, name: string, type: String}[] = []
+                let defaultSpaceId:String = ""
+                let defaultSpaceType:String = ""
+                spacesInfo.forEach((s) => {
+                    if (s.isDefault) {
+                        defaultSpaceId = s._id
+                        defaultSpaceType = s.type
+                    }
+                    spaces.push({id: s._id, name: s.name, type: s.type})
+                })
                 const userData = {
                     username: response.data.data.object.username,
                     email: response.data.data.object.email,
@@ -126,10 +137,12 @@ export function AuthService() {
                     currency: response.data.data.object.currency,
                     plan: response.data.data.object.plan,
                     role: response.data.data.object.role,
+                    spaces: spaces
                 }
                 dispatch(loginSuccess(userData))
+                console.log(spaces)
                 toast.success("Login successful!");
-                navigate(`/user-portal/${UserPortalView.DASHBOARD}`);
+                navigate(`/user-portal/${defaultSpaceType.toLowerCase().split("_").join("-")}/${defaultSpaceId}/${UserPortalView.DASHBOARD}`);
             }
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
@@ -155,6 +168,17 @@ export function AuthService() {
             const response = await api.post(`auth/google`, body, { withCredentials: true });
             console.log(response.data)
             if (response.data.success) {
+                const spacesInfo: any = response.data.data.object.spaces
+                const spaces: {id: string, name: string, type: String}[] = []
+                let defaultSpaceId:String = ""
+                let defaultSpaceType:String = ""
+                spacesInfo.forEach((s: any) => {
+                    if (s.isDefault) {
+                        defaultSpaceId = s._id
+                        defaultSpaceType = s.type
+                    }
+                    spaces.push({id: s._id, name: s.name, type: s.type})
+                })
                 const userData = {
                     username: response.data.data.object.username,
                     email: response.data.data.object.email,
@@ -162,10 +186,11 @@ export function AuthService() {
                     currency: response.data.data.object.currency,
                     plan: response.data.data.object.plan,
                     role: response.data.data.object.role,
+                    spaces: spaces
                 }
                 dispatch(loginSuccess(userData))
                 toast.success("Login successful!");
-                navigate(`/user-portal/${UserPortalView.DASHBOARD}`);
+                navigate(`/user-portal/${defaultSpaceType.toLowerCase().split("_").join("-")}/${defaultSpaceId}/${UserPortalView.DASHBOARD}`);
             }
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {

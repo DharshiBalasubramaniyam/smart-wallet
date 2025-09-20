@@ -1,0 +1,266 @@
+[
+    {
+        "_id": {
+            "$oid": "68c8d8d5dfe13cdc534c9efe"
+        },
+        "parentCategory": "Miscellaneous",
+        "subCategories": [
+            {
+                "name": "fee & charge",
+                "color": "#FF9800",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9eff"
+                }
+            },
+            {
+                "name": "tax",
+                "color": "#E91E63",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f00"
+                }
+            },
+            {
+                "name": "bills",
+                "color": "#03A9F4",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f01"
+                }
+            },
+            {
+                "name": "interest",
+                "color": "#4CAF50",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f02"
+                }
+            },
+            {
+                "name": "donations",
+                "color": "#9C27B0",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f03"
+                }
+            },
+            {
+                "name": "fines & penalties",
+                "color": "#F44336",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f04"
+                }
+            },
+            {
+                "name": "subscriptions",
+                "color": "#00BCD4",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f05"
+                }
+            },
+            {
+                "name": "gifts",
+                "color": "#FFC107",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f06"
+                }
+            },
+            {
+                "name": "one-time purchases",
+                "color": "#8BC34A",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f07"
+                }
+            },
+            {
+                "name": "transfer",
+                "color": "#8BC34A",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f08"
+                }
+            }
+        ],
+        "color": "#9E9E9E",
+        "__v": {
+            "$numberInt": "0"
+        },
+        "createdAt": {
+            "$date": {
+                "$numberLong": "1757993173389"
+            }
+        },
+        "updatedAt": {
+            "$date": {
+                "$numberLong": "1757993173389"
+            }
+        }
+    },
+    {
+        "_id": {
+            "$oid": "68c8d8d5dfe13cdc534c9f09"
+        },
+        "parentCategory": "loan",
+        "subCategories": [
+            {
+                "name": "principal",
+                "color": "#6b32a8",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f0a"
+                }
+            },
+            {
+                "name": "interest",
+                "color": "#32a89c",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f0b"
+                }
+            },
+            {
+                "name": "repayment",
+                "color": "#a86532",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f0c"
+                }
+            }
+        ],
+        "color": "#a8326d",
+        "__v": {
+            "$numberInt": "0"
+        },
+        "createdAt": {
+            "$date": {
+                "$numberLong": "1757993173390"
+            }
+        },
+        "updatedAt": {
+            "$date": {
+                "$numberLong": "1757993173390"
+            }
+        }
+    },
+    {
+        "_id": {
+            "$oid": "68c8d8d5dfe13cdc534c9f0d"
+        },
+        "parentCategory": "Food & Drinks",
+        "subCategories": [
+            {
+                "name": "Groceries",
+                "color": "#FF5733",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f0e"
+                }
+            },
+            {
+                "name": "Restaurants",
+                "color": "#33FF57",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f0f"
+                }
+            },
+            {
+                "name": "Coffee & Tea",
+                "color": "#3357FF",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f10"
+                }
+            }
+        ],
+        "color": "#FF5733",
+        "__v": {
+            "$numberInt": "0"
+        },
+        "createdAt": {
+            "$date": {
+                "$numberLong": "1757993173390"
+            }
+        },
+        "updatedAt": {
+            "$date": {
+                "$numberLong": "1757993173390"
+            }
+        }
+    },
+    {
+        "_id": {
+            "$oid": "68c8d8d5dfe13cdc534c9f11"
+        },
+        "parentCategory": "Shopping",
+        "subCategories": [
+            {
+                "name": "Clothing",
+                "color": "#FF33A8",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f12"
+                }
+            },
+            {
+                "name": "Electronics",
+                "color": "#33FFF6",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f13"
+                }
+            },
+            {
+                "name": "Accessories",
+                "color": "#F6FF33",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f14"
+                }
+            }
+        ],
+        "color": "#FF33A8",
+        "__v": {
+            "$numberInt": "0"
+        },
+        "createdAt": {
+            "$date": {
+                "$numberLong": "1757993173390"
+            }
+        },
+        "updatedAt": {
+            "$date": {
+                "$numberLong": "1757993173390"
+            }
+        }
+    },
+    {
+        "_id": {
+            "$oid": "68c8d8d5dfe13cdc534c9f1d"
+        },
+        "parentCategory": "Income",
+        "subCategories": [
+            {
+                "name": "Salary",
+                "color": "#1ABC9C",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f1e"
+                }
+            },
+            {
+                "name": "Freelance",
+                "color": "#9B59B6",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f1f"
+                }
+            },
+            {
+                "name": "Investments",
+                "color": "#34495E",
+                "_id": {
+                    "$oid": "68c8d8d5dfe13cdc534c9f20"
+                }
+            }
+        ],
+        "color": "#1ABC9C",
+        "__v": {
+            "$numberInt": "0"
+        },
+        "createdAt": {
+            "$date": {
+                "$numberLong": "1757993173390"
+            }
+        },
+        "updatedAt": {
+            "$date": {
+                "$numberLong": "1757993173390"
+            }
+        }
+    }
+]

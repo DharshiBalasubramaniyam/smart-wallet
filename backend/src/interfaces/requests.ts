@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import { PaymentType } from "../models/payment";
+import { SpaceType } from "../models/space";
 
 export interface CreateAccountRequest {
     email: string;
@@ -34,4 +36,11 @@ export interface CreateSubscriptionRequest {
     planId: string;
     paymentId: string;
     autoRenew: boolean;
+}
+
+export interface CreateSpaceRequest {
+    type: SpaceType;
+    name: string;
+    loanPrincipal?: mongoose.Schema.Types.Decimal128,
+    creditCardLimit?: mongoose.Schema.Types.Decimal128
 }

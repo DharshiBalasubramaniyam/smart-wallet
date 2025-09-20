@@ -1,14 +1,42 @@
-import { useState } from "react";
+import { Dispatch, useState } from "react";
 import { MenuIcon } from "../icons";
 import Logo from "../Logo";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { UserPortalView } from "./SideBar";
+import { capitalize, toLocalSpaceType } from "../../utils/utils";
+import { useNavigate, useParams } from "react-router-dom";
+import DropDown from "../Dropdown";
 
-function NavBar({ setSideBarOpen, isSideBarOpen, view }: { setSideBarOpen: (isopen: boolean) => void, isSideBarOpen:boolean, view: UserPortalView }) {
+function NavBar({ setSideBarOpen, isSideBarOpen, view, spaceId, setSpaceFormToggle }: { setSideBarOpen: (isopen: boolean) => void, isSideBarOpen: boolean, view: UserPortalView, spaceId: string, setSpaceFormToggle: Dispatch<React.SetStateAction<boolean>> }) {
 
    const [isUserMenuOpen, setUserMenuOpen] = useState<boolean>(false)
-   const {email, username} = useSelector((state: RootState) => state.auth)
+   const { email, username, spaces } = useSelector((state: RootState) => state.auth)
+   // const {spaceid} = useParams();
+   const navigate = useNavigate();
+
+   console.log(spaces)
+
+   // const onInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+   //    const { name, value } = e.target as HTMLInputElement;
+   //    if (value === "new") {
+   //       setSpaceFormToggle(true)
+   //       return
+   //    }
+   //    const valueParts = value.split("-")
+   //    navigate(`/user-portal/${valueParts[1].toLowerCase().split("_").join("-")}/${valueParts[0]}/${view}`);
+   // }
+
+   const onInputChange = (text: string) => {
+      // const { name, value } = e.target as HTMLInputElement;
+      if (text === "New Space") {
+         setSpaceFormToggle(true)
+         return
+      }
+      const selectedSpace = spaces.find(sp => sp.name===text)
+      if (!selectedSpace) return
+      navigate(`/user-portal/${toLocalSpaceType(selectedSpace.type)}/${selectedSpace.id}/${view}`);
+   }
 
    return (
       <nav className="fixed top-0 z-50 w-full bg-bg-light-primary dark:bg-bg-dark-primary border-b border-border-light-primary dark:border-border-dark-primary h-20">
@@ -22,16 +50,21 @@ function NavBar({ setSideBarOpen, isSideBarOpen, view }: { setSideBarOpen: (isop
                   >
                      <MenuIcon />
                   </button>
-                  <Logo/>
+                  <Logo />
                </div>
                <div className="flex-1 relative">
-                  <input 
-                     className="bg-bg-light-primary dark:bg-bg-dark-primary w-full p-2 rounded border-1 border-border-light-primary dark:border-border-dark-primary text-text-light-primary dark:text-text-dark-primary outline-none focus:border-primary focus:bg-transparent text-sm"
+                  <input
+                     className="bg-bg-light-primary dark:bg-bg-dark-primary w-full p-2 rounded border-2 border-border-light-primary dark:border-border-dark-primary text-text-light-primary dark:text-text-dark-primary outline-none focus:border-primary focus:bg-transparent text-sm"
                      placeholder={`Search ${view}`}
                   />
-                  {/* <div className="absolute top-full left-0 w-full h-60 bg-amber-500 rounded-b-md">
-
-                  </div> */}
+               </div>
+               <div className="max-w-sm ml-3">
+                  <DropDown
+                     title={spaces.find(sp => sp.id === spaceId)?.name || ""}
+                     dropdownItems={spaces.map(sp => `${sp.name}`)}
+                     lastItem={"New Space"}
+                     onClick={(text) => onInputChange(text)}
+                  />
                </div>
                <div className="flex items-center relative">
                   <div className="flex items-center ms-3">

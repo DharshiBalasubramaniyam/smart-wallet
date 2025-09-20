@@ -32,7 +32,7 @@ function AppContainer() {
             <Route path="/verify-otp" element={<OTPVerification />} />
             <Route path="/register/currency" element={<Currency />} />
             <Route
-                path="/user-portal/:view"
+                path="/user-portal/:spacetype/:spaceid/:view"
                 element={
                     <ProtectedRoute >
                         <UserPortal />

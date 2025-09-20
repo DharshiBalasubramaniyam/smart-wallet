@@ -1,9 +1,34 @@
-import { SubscriptionStatus } from '../models/subscription';
-import Subscription from '../models/subscription';
 import Plan from '../models/plan';
 import Payment from '../models/payment';
+import cron from 'node-cron';
+import Subscription, { SubscriptionStatus } from '../models/subscription';
 
-export const processSubscriptionRenewal = async (subscription: any) => {
+export const initSubscriptionJobs = () => {
+    cron.schedule('0 0 * * *', async () => {
+        try {
+            const subscriptions = await Subscription.find({
+                status: SubscriptionStatus.ACTIVE,
+                autoRenew: true,
+                nextBillingDate: {
+                    $lte: new Date(Date.now() + 24 * 60 * 60 * 1000) // Next 24 hours
+                }
+            });
+
+            for (const subscription of subscriptions) {
+                const result = await processSubscriptionRenewal(subscription);
+                if (!result.success) {
+                    // Send notification to user about failed renewal
+                    console.log(`Subscription.Job ==> Failed to renew subscription ${subscription._id}: ${result.message}`);
+                }
+            }
+        } catch (error) {
+            console.error('Subscription.Job ==> Error in subscription renewal job:', error);
+        }
+    });
+};
+
+
+const processSubscriptionRenewal = async (subscription: any) => {
     try {
         // Validate payment method
         const payment = await Payment.findById(subscription.paymentId);
@@ -34,11 +59,11 @@ export const processSubscriptionRenewal = async (subscription: any) => {
         // Calculate new dates
         const startDate = new Date();
         const endDate = new Date();
-            endDate.setMonth(endDate.getMonth() + 1);
+        endDate.setMonth(endDate.getMonth() + 1);
 
         // Process payment here (integrate with payment gateway)
         // const paymentResult = await processPayment(payment, plan.price);
-        
+
         // Update subscription
         await Subscription.findByIdAndUpdate(subscription._id, {
             startDate,
@@ -60,3 +85,4 @@ export const processSubscriptionRenewal = async (subscription: any) => {
         };
     }
 };
+
