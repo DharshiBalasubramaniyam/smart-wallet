@@ -1,0 +1,12 @@
+{
+   "name": "smart-wallet",
+   "scripts": {
+      "start-frontend": "npm run dev --prefix frontend",
+      "start-backend": "npm start --prefix backend",
+      "start": "concurrently \"npm run start-frontend\" \"npm run start-backend\"",
+      "install-all": "npm install && npm install --prefix frontend && npm install --prefix backend"
+   },
+   "dependencies": {
+      "concurrently": "^9.1.2"
+   }
+}
