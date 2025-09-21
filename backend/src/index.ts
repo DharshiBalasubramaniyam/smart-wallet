@@ -12,8 +12,9 @@ import scheduleRouter from "./routes/schedule";
 import { initSubscriptionJobs } from './jobs/subscription';
 import { connectDatabase } from './config/database';
 import path from 'path';
-import { seedCategories } from './models/category';
+// import { seedCategories } from './models/category';
 import { initScheduleJobs } from './jobs/schedule';
+import { seedCategories } from './models/category';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });

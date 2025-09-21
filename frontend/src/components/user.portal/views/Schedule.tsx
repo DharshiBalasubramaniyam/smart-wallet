@@ -49,6 +49,11 @@ function Schedule() {
    const { getCategories } = CategoryService();
    const pageLimit = 10;
 
+   const [allowedParentCategories, setAllowedParentCategories] = useState<any[]>([])
+   const [allowedSubCategories, setAllowedSubCategories] = useState<CategoryInfo[]>([])
+
+   console.log(categories)
+
    const onView = (schedule: any) => {
       const info: ScheduleInfo = {
          amount: schedule.amount.$numberDecimal,
@@ -99,29 +104,6 @@ function Schedule() {
 
       let finalInputs = inputs;
 
-      if (inputs.type === TransactionType.PRINCIPAL_REPAYMENT_RECEIVED || inputs.type === TransactionType.PRINCIPAL_REPAYMENT_PAID) {
-         const pcategory = categories.find((cat) => cat.parentCategory === "loan");
-         const scategory = pcategory?.subCategories.find((cat) => cat.name === "repayment")
-         finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      }
-
-      else if (inputs.type === TransactionType.INTEREST_PAID || inputs.type === TransactionType.INTEREST_RECEIVED) {
-         const pcategory = categories.find((cat) => cat.parentCategory === "loan");
-         const scategory = pcategory?.subCategories.find((cat) => cat.name === "interest")
-         finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      }
-
-      else if (inputs.type === TransactionType.INTERNAL_TRANSFER) {
-         const pcategory = categories.find((cat) => cat.parentCategory === "Miscellaneous");
-         const scategory = pcategory?.subCategories.find((cat) => cat.name === "transfer")
-         finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      }
-
-      else if (inputs.type === TransactionType.BILL_PAYMENT) {
-         const pcategory = categories.find((cat) => cat.parentCategory === "Miscellaneous");
-         const scategory = pcategory?.subCategories.find((cat) => cat.name === "bills")
-         finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      }
       console.log(finalInputs)
       setLoading(true)
       if (editId) {
@@ -208,25 +190,6 @@ function Schedule() {
    }
 
    useEffect(() => {
-      const fetchCategories = () => {
-         getCategories()
-            .then((res) => setCategories(res))
-            .catch((err) => setCategories([]))
-      }
-      fetchCategories();
-      setLoading(true)
-      getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
-         .then(res => {
-            setSchedules(res.schedules)
-            setTotal(res.total)
-         })
-         .catch(err => setSchedules([]))
-         .finally(() => {
-            setLoading(false);
-         });
-   }, [])
-
-   useEffect(() => {
       if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("ACTIVE_SPACE")) {
          setInputs((prev: any) => {
             return { ...prev, from: spaceid }
@@ -245,10 +208,32 @@ function Schedule() {
             return { ...prev, pcategory: categories.find((c) => c.parentCategory === "Income")?._id }
          });
       }
+
+      const pcategories = categories
+         .filter(cat => cat.transactionTypes.includes(inputs.type))
+         .map(cat => ({
+            parentCategoryId: cat.parentCategoryId,
+            parentCategory: cat.parentCategory
+         }));
+      setAllowedParentCategories([
+         ...new Map(
+            pcategories.map(cat => [cat.parentCategoryId, cat])
+         ).values()
+      ])
+      if (pcategories.length === 1) {
+         setInputs((prev: any) => {
+            return { ...prev, pcategory: pcategories[0].parentCategoryId }
+         })
+      }
    }, [inputs.type])
 
    useEffect(() => {
       setLoading(true)
+
+      getCategories(toStrdSpaceType(spacetype))
+         .then((res) => setCategories(res))
+         .catch((err) => setCategories([]))
+
       getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
          .then(res => {
             setSchedules(res.schedules)
@@ -259,6 +244,17 @@ function Schedule() {
             setLoading(false);
          });
    }, [page, spaceid])
+
+   useEffect(() => {
+      const scategories = categories
+         .filter(cat => cat.parentCategoryId === inputs.pcategory && cat.transactionTypes.includes(inputs.type))
+      if (scategories.length === 1) {
+         setInputs((prev: any) => {
+            return { ...prev, scategory: scategories[0].subCategoryId }
+         })
+      }
+      setAllowedSubCategories(scategories)
+   }, [inputs.pcategory])
 
    if (loading) return <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Loading...</h1>
 
@@ -431,52 +427,33 @@ function Schedule() {
                         </div>
 
                         {/* p category */}
-                        <div className={inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Category:</label>
+                        <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary">Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
                               value={inputs.pcategory || ""}
                               name={"pcategory"}
                               onChange={onInputChange}
-                              disabled={inputs.type === TransactionType.INCOME}
                            >
                               {
-                                 inputs.type === TransactionType.INCOME ? (
-                                    categories
-                                       .filter((c) => c.parentCategory === "Income")
-                                       .map((c) => {
-                                          return (
-                                             <option key={c._id} value={c._id}>
-                                                {c.parentCategory}
-                                             </option>
-                                          );
-                                       })
-                                 ) : (
-                                    <>
-                                       <option value={""}>Select category</option>
-                                       {
-                                          categories
-                                             .filter(
-                                                (c) =>
-                                                   c.parentCategory !== "Income" &&
-                                                   c.parentCategory !== "loan"
-                                             )
-                                             .map((c) => {
-                                                return (
-                                                   <option key={c._id} value={c._id}>
-                                                      {c.parentCategory}
-                                                   </option>
-                                                );
-                                             })
-                                       }
-                                    </>
+                                 allowedParentCategories.length > 1 && (
+                                    <option value="">Select category</option>
                                  )
+                              }
+                              {
+                                 allowedParentCategories.map(cat => {
+                                    return (
+                                       <option value={cat.parentCategoryId}>
+                                          {cat.parentCategory}
+                                       </option>
+                                    )
+                                 })
                               }
                            </select>
                         </div>
 
                         {/* sub category */}
-                        <div className={(inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE) && inputs.pcategory != null ? `my-3` : `my-3 hidden`}>
+                        <div className={inputs.type != "" && inputs.pcategory ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Sub Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
@@ -484,17 +461,19 @@ function Schedule() {
                               name="scategory"
                               onChange={onInputChange}
                            >
-                              <option value={""}>
-                                 Select sub category
-                              </option>
                               {
-                                 categories.find(cat => cat._id === inputs.pcategory)?.subCategories.map(c => {
-                                    return (
-                                       <option value={c._id}>
-                                          {c.name}
-                                       </option>
-                                    )
-                                 })
+                                 allowedSubCategories.length > 1 && (
+                                    <option value="">Select category</option>
+                                 )
+                              }
+                              {
+                                 allowedSubCategories.map(cat => {
+                                       return (
+                                          <option value={cat.subCategoryId}>
+                                             {cat.subCategoryName}
+                                          </option>
+                                       )
+                                    })
                               }
                            </select>
                         </div>
@@ -582,7 +561,7 @@ function Schedule() {
                         </div>
 
                         {/* Recurring Approval */}
-                        <div className={inputs.type != ""  ? `my-3` : `my-3 hidden`}>
+                        <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Do you want to create schedules automatically for future schedules?:</label>
                            <div className="mt-2 flex gap-2 items-center justify-start">
                               <input
@@ -789,7 +768,7 @@ function Schedule() {
                         </div>
 
                         {/* p category */}
-                        <div className={inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE ? `my-3` : `my-3 hidden`}>
+                        <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
@@ -797,9 +776,9 @@ function Schedule() {
                               name={"pcategory"}
                               disabled={true}
                            >
-                              {categories.map((c) => {
+                              {categories.filter(cat => inputs.pcategory && cat.parentCategoryId == inputs.pcategory).slice(0, 1)?.map((c) => {
                                  return (
-                                    <option key={c._id} value={c._id}>
+                                    <option key={c.parentCategoryId} value={c._id}>
                                        {c.parentCategory}
                                     </option>
                                  );
@@ -810,7 +789,7 @@ function Schedule() {
                         </div>
 
                         {/* sub category */}
-                        <div className={(inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE) && inputs.pcategory != null ? `my-3` : `my-3 hidden`}>
+                        <div className={inputs.type != "" && inputs.pcategory ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Sub Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
@@ -822,10 +801,10 @@ function Schedule() {
                                  Select sub category
                               </option>
                               {
-                                 categories.find(cat => cat._id === inputs.pcategory)?.subCategories.map(c => {
+                                 categories.map(c => {
                                     return (
-                                       <option value={c._id}>
-                                          {c.name}
+                                       <option value={c.subCategoryId}>
+                                          {c.subCategoryName}
                                        </option>
                                     )
                                  })

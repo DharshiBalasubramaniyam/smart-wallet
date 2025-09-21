@@ -58,7 +58,7 @@ function DropDown({ title, headerTexts, dropdownItems, lastItem, onClick }: Drop
                             {
                                 dropdownItems.map(item => {
                                     return (
-                                        <li className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white capitalize cursor-pointer" onClick={() => onSelect(item)}>
+                                        <li key={item} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white capitalize cursor-pointer" onClick={() => onSelect(item)}>
                                             {item}
                                         </li>
                                     )

@@ -51,7 +51,7 @@ export function TransactionService() {
             });
             if (response.data.success) {
                 console.log(response.data)
-                toast.success(response.data.data.message)
+                toast.success(response.data.message)
             }
         } catch (error) {
             processError(error)

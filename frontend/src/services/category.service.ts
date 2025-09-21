@@ -8,7 +8,7 @@ import { CategoryInfo } from '../interfaces/modals';
 export function CategoryService() {
     const token = useSelector((state: RootState) => state.auth.token)
 
-    async function getCategories(): Promise<CategoryInfo[]> {
+    async function getCategories(spaceType?: string): Promise<CategoryInfo[]> {
         try {
             const response = await api.get(`category/`, {
                 headers: {

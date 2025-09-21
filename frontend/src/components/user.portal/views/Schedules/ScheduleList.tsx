@@ -28,14 +28,7 @@ function ScheduleList({ schedules, categories, onClick, onConfirm, onSkip }: { s
                             <div className="flex justify-between">
                                 <span className="text-text-light-primary dark:text-text-dark-primary capitalize">
                                     {
-                                        (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) && schedule.pcategory &&
-                                        (categories.find(pc => pc._id === schedule.pcategory)?.parentCategory) + " - "
-                                    }
-                                    {
-                                        (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) && schedule.pcategory ?
-                                            (categories.find(pc => pc._id === schedule.pcategory)?.subCategories
-                                                .find(sc => sc._id === schedule.scategory)?.name) :
-                                            capitalize(schedule.type.split("_").join(" "))
+                                        (categories.find(pc => pc.subCategoryId === schedule.scategory)?.subCategoryName)
                                     }
                                 </span>
                                 <span className="text-text-light-primary dark:text-text-dark-primary">{currency}. {schedule.amount.$numberDecimal}</span>

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import Space, { SpaceType } from '../models/space';
 import Transaction from '../models/transaction';
-import Category from '../models/category';
+import Cat from '../models/category';
 import { authenticate } from '../middlewares/auth';
 import { TransactionType } from '../models/transaction';
 
@@ -45,9 +45,23 @@ spaceRouter.post('/', authenticate, async (req: Request, res: Response) => {
         const today = new Date()
 
         if (req.body.type == SpaceType.LOAN_BORROWED) {
-            const pcategories = await Category.find({ parentCategory: "loan" })
-            const pcategory = pcategories.length > 0 ? pcategories[0] : null
-            const scategory = pcategory?.subCategories.find((cat) => cat.name === "principal") || null
+            const scategories = await Cat.aggregate([
+                { $match: { spaces: SpaceType.LOAN_BORROWED } },
+
+                { $unwind: "$subCategories" },
+
+                {
+                    $project: {
+                        parentCategoryId: "$_id",
+                        parentCategory: 1,
+                        subCategoryId: "$subCategories._id",
+                        subCategoryName: "$subCategories.name",
+                        transactionTypes: "$subCategories.transactionTypes"
+                    }
+                }
+            ]);
+
+            const scategory = scategories.find(cat => cat.transactionTypes.includes(TransactionType.LOAN_PRINCIPAL))
 
             let transaction = {
                 type: TransactionType.LOAN_PRINCIPAL,
@@ -56,15 +70,29 @@ spaceRouter.post('/', authenticate, async (req: Request, res: Response) => {
                 from: space._id,
                 date: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
                 note: "",
-                pcategory: pcategory?._id,
-                scategory: scategory?._id,
+                pcategory: scategory?.parentCategoryId,
+                scategory: scategory?.subCategoryId,
                 userId: userId,
             }
             await Transaction.create(transaction)
         } else if (req.body.type == SpaceType.LOAN_LENT) {
-            const pcategories = await Category.find({ parentCategory: "loan" })
-            const pcategory = pcategories.length > 0 ? pcategories[0] : null
-            const scategory = pcategory?.subCategories.find((cat) => cat.name === "principal") || null
+            const scategories = await Cat.aggregate([
+                { $match: { spaces: SpaceType.LOAN_LENT } },
+
+                { $unwind: "$subCategories" },
+
+                {
+                    $project: {
+                        parentCategoryId: "$_id",
+                        parentCategory: 1,
+                        subCategoryId: "$subCategories._id",
+                        subCategoryName: "$subCategories.name",
+                        transactionTypes: "$subCategories.transactionTypes"
+                    }
+                }
+            ]);
+
+            const scategory = scategories.find(cat => cat.transactionTypes.includes(TransactionType.LOAN_PRINCIPAL))
             let transaction = {
                 type: TransactionType.LOAN_PRINCIPAL,
                 amount: req.body.loanPrincipal,
@@ -72,8 +100,8 @@ spaceRouter.post('/', authenticate, async (req: Request, res: Response) => {
                 to: space._id,
                 date: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
                 note: "",
-                pcategory: pcategory?._id,
-                scategory: scategory?._id,
+                pcategory: scategory?.parentCategoryId,
+                scategory: scategory?.subCategoryId,
                 userId: userId,
             }
             await Transaction.create(transaction)
@@ -152,9 +180,23 @@ spaceRouter.put('/:id', authenticate, async (req: Request, res: Response) => {
         const today = new Date()
 
         if (req.body.type == SpaceType.LOAN_BORROWED) {
-            const pcategories = await Category.find({ parentCategory: "loan" })
-            const pcategory = pcategories.length > 0 ? pcategories[0] : null
-            const scategory = pcategory?.subCategories.find((cat) => cat.name === "principal") || null
+            const scategories = await Cat.aggregate([
+                { $match: { spaces: SpaceType.LOAN_BORROWED } },
+
+                { $unwind: "$subCategories" },
+
+                {
+                    $project: {
+                        parentCategoryId: "$_id",
+                        parentCategory: 1,
+                        subCategoryId: "$subCategories._id",
+                        subCategoryName: "$subCategories.name",
+                        transactionTypes: "$subCategories.transactionTypes"
+                    }
+                }
+            ]);
+
+            const scategory = scategories.find(cat => cat.transactionTypes.includes(TransactionType.LOAN_PRINCIPAL))
 
             const existingTransaction = await Transaction.findOne({
                 from: id,
@@ -177,16 +219,30 @@ spaceRouter.put('/:id', authenticate, async (req: Request, res: Response) => {
                 from: id,
                 date: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
                 note: "",
-                pcategory: pcategory?._id,
-                scategory: scategory?._id,
+                pcategory: scategory?.parentCategoryId,
+                scategory: scategory?.subCategoryId,
                 userId: userId,
             }
 
             await Transaction.updateOne({ _id: existingTransaction._id }, { $set: transaction })
         } else if (req.body.type == SpaceType.LOAN_LENT) {
-            const pcategories = await Category.find({ parentCategory: "loan" })
-            const pcategory = pcategories.length > 0 ? pcategories[0] : null
-            const scategory = pcategory?.subCategories.find((cat) => cat.name === "principal") || null
+            const scategories = await Cat.aggregate([
+                { $match: { spaces: SpaceType.LOAN_LENT } },
+
+                { $unwind: "$subCategories" },
+
+                {
+                    $project: {
+                        parentCategoryId: "$_id",
+                        parentCategory: 1,
+                        subCategoryId: "$subCategories._id",
+                        subCategoryName: "$subCategories.name",
+                        transactionTypes: "$subCategories.transactionTypes"
+                    }
+                }
+            ]);
+
+            const scategory = scategories.find(cat => cat.transactionTypes.includes(TransactionType.LOAN_PRINCIPAL))
 
             const existingTransaction = await Transaction.findOne({
                 to: id,
@@ -209,8 +265,8 @@ spaceRouter.put('/:id', authenticate, async (req: Request, res: Response) => {
                 to: id,
                 date: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
                 note: "",
-                pcategory: pcategory?._id,
-                scategory: scategory?._id,
+                pcategory: scategory?.parentCategoryId,
+                scategory: scategory?.subCategoryId,
                 userId: userId,
             }
             await Transaction.updateOne({ _id: existingTransaction._id }, { $set: transaction })

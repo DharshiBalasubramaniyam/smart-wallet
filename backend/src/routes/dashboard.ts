@@ -114,7 +114,7 @@ dashboardRouter.get('/cash/:spaceid/:from/:to', authenticate, async (req: Reques
             // Lookup to get parent category names
             {
                 $lookup: {
-                    from: "categories", // name of your categories collection
+                    from: "cats", // name of your categories collection
                     localField: "_id", // the grouped pcategory ID
                     foreignField: "_id", // match with categories _id
                     as: "categoryData",
@@ -155,7 +155,7 @@ dashboardRouter.get('/cash/:spaceid/:from/:to', authenticate, async (req: Reques
             // Lookup parent category
             {
                 $lookup: {
-                    from: "categories",              // collection name
+                    from: "cats",              // collection name
                     localField: "_id.pcategory",     // ID in transactions
                     foreignField: "_id",             // ID in categories collection
                     as: "parentCategory"
@@ -214,7 +214,7 @@ dashboardRouter.get('/cash/:spaceid/:from/:to', authenticate, async (req: Reques
             // 3️⃣ Lookup parent categories to get subcategory names
             {
                 $lookup: {
-                    from: "categories",          // categories collection
+                    from: "cats",          // categories collection
                     localField: "_id",           // scategory ID
                     foreignField: "subCategories._id", // match inside subCategories array
                     as: "categoryData"

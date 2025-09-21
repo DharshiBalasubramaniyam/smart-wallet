@@ -28,14 +28,7 @@ function TransactionList({ transactions, categories, onClick }: { transactions: 
                             <div className="flex justify-between">
                                 <span className="text-text-light-primary dark:text-text-dark-primary capitalize">
                                     {
-                                        (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) && t.pcategory &&
-                                        (categories.find(pc => pc._id === t.pcategory)?.parentCategory) + " - "
-                                    }
-                                    {
-                                        (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) && t.pcategory ?
-                                            (categories.find(pc => pc._id === t.pcategory)?.subCategories
-                                                .find(sc => sc._id === t.scategory)?.name) :
-                                            capitalize(t.type.split("_").join(" "))
+                                        (categories.find(pc => pc.subCategoryId === t.scategory)?.subCategoryName)
                                     }
                                 </span>
                                 <span className="text-text-light-primary dark:text-text-dark-primary">{currency}. {t.amount.$numberDecimal}</span>

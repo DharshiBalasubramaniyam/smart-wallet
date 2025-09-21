@@ -47,7 +47,7 @@ function Category() {
                                             key={sc.name}
                                             className="capitalize py-2 px-2 my-2 flex-1 min-w-64 max-w-80 text-text-light-secondary dark:text-text-dark-secondary"
                                             style={{
-                                                backgroundColor: sc.color + "20", // add transparency for bg (hex + alpha)
+                                                backgroundColor: sc.color + "20", 
                                                 borderColor: sc.color,
                                                 borderWidth: 1,
                                             }}

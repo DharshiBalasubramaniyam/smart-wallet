@@ -144,7 +144,9 @@ interface SubCategoryInfo {
 
 export interface CategoryInfo {
   _id: string,
+  parentCategoryId: string;
   parentCategory: string;
-  subCategories: SubCategoryInfo[];
-  color: string,
+  subCategoryId: string;
+  subCategoryName: string;
+  transactionTypes: string[],
 }

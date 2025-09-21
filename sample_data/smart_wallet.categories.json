@@ -1,266 +1,450 @@
 [
     {
-        "_id": {
-            "$oid": "68c8d8d5dfe13cdc534c9efe"
-        },
+        "parentCategory": "Loan Lent",
+        "subCategories": [
+            {
+                "name": "Principal",
+                "color": "#6b32a8",
+                "transactionTypes": [
+                    "LOAN_PRINCIPAL"
+                ]
+            },
+            {
+                "name": "Interest Received",
+                "color": "#32a89c",
+                "transactionTypes": [
+                    "INTEREST_RECEIVED"
+                ]
+            },
+            {
+                "name": "Repayment Received",
+                "color": "#a86532",
+                "transactionTypes": [
+                    "PRINCIPAL_REPAYMENT_RECEIVED"
+                ]
+            }
+        ],
+        "color": "#6b32a8",
+        "spaces": [
+            "LOAN_LENT"
+        ]
+    },
+    {
+        "parentCategory": "Loan Borrowed",
+        "subCategories": [
+            {
+                "name": "Principal",
+                "color": "#6b32a8",
+                "transactionTypes": [
+                    "LOAN_PRINCIPAL"
+                ]
+            },
+            {
+                "name": "Interest Paid",
+                "color": "#32a89c",
+                "transactionTypes": [
+                    "INTEREST_PAID"
+                ]
+            },
+            {
+                "name": "Repayment Paid",
+                "color": "#a86532",
+                "transactionTypes": [
+                    "PRINCIPAL_REPAYMENT_PAID"
+                ]
+            }
+        ],
+        "color": "#a8326d",
+        "spaces": [
+            "LOAN_BORROWED"
+        ]
+    },
+    {
+        "parentCategory": "Credit Card",
+        "subCategories": [
+            {
+                "name": "Bill Payment",
+                "color": "#32a89c",
+                "transactionTypes": [
+                    "BILL_PAYMENT"
+                ]
+            },
+            {
+                "name": "Interest Charged",
+                "color": "#a86532",
+                "transactionTypes": [
+                    "INTEREST_CHARGED"
+                ]
+            },
+            {
+                "name": "Refund",
+                "color": "#FF5733",
+                "transactionTypes": [
+                    "REFUND"
+                ]
+            }
+        ],
+        "color": "#a8326d",
+        "spaces": [
+            "CREDIT_CARD"
+        ]
+    },
+    {
         "parentCategory": "Miscellaneous",
         "subCategories": [
             {
                 "name": "fee & charge",
                 "color": "#FF9800",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9eff"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "tax",
                 "color": "#E91E63",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f00"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "bills",
                 "color": "#03A9F4",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f01"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "interest",
                 "color": "#4CAF50",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f02"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "donations",
                 "color": "#9C27B0",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f03"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "fines & penalties",
                 "color": "#F44336",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f04"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "subscriptions",
                 "color": "#00BCD4",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f05"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "gifts",
                 "color": "#FFC107",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f06"
-                }
-            },
-            {
-                "name": "one-time purchases",
-                "color": "#8BC34A",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f07"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "transfer",
                 "color": "#8BC34A",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f08"
-                }
+                "transactionTypes": [
+                    "INTERNAL_TRANSFER"
+                ]
             }
         ],
-        "color": "#9E9E9E",
-        "__v": {
-            "$numberInt": "0"
-        },
-        "createdAt": {
-            "$date": {
-                "$numberLong": "1757993173389"
-            }
-        },
-        "updatedAt": {
-            "$date": {
-                "$numberLong": "1757993173389"
-            }
-        }
+        "color": "#FF9800",
+        "spaces": [
+            "CASH",
+            "BANK",
+            "CREDIT_CARD"
+        ]
     },
     {
-        "_id": {
-            "$oid": "68c8d8d5dfe13cdc534c9f09"
-        },
-        "parentCategory": "loan",
-        "subCategories": [
-            {
-                "name": "principal",
-                "color": "#6b32a8",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f0a"
-                }
-            },
-            {
-                "name": "interest",
-                "color": "#32a89c",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f0b"
-                }
-            },
-            {
-                "name": "repayment",
-                "color": "#a86532",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f0c"
-                }
-            }
-        ],
-        "color": "#a8326d",
-        "__v": {
-            "$numberInt": "0"
-        },
-        "createdAt": {
-            "$date": {
-                "$numberLong": "1757993173390"
-            }
-        },
-        "updatedAt": {
-            "$date": {
-                "$numberLong": "1757993173390"
-            }
-        }
-    },
-    {
-        "_id": {
-            "$oid": "68c8d8d5dfe13cdc534c9f0d"
-        },
         "parentCategory": "Food & Drinks",
         "subCategories": [
             {
                 "name": "Groceries",
                 "color": "#FF5733",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f0e"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "Restaurants",
                 "color": "#33FF57",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f0f"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "Coffee & Tea",
                 "color": "#3357FF",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f10"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             }
         ],
         "color": "#FF5733",
-        "__v": {
-            "$numberInt": "0"
-        },
-        "createdAt": {
-            "$date": {
-                "$numberLong": "1757993173390"
-            }
-        },
-        "updatedAt": {
-            "$date": {
-                "$numberLong": "1757993173390"
-            }
-        }
+        "spaces": [
+            "CASH",
+            "BANK",
+            "CREDIT_CARD"
+        ]
     },
     {
-        "_id": {
-            "$oid": "68c8d8d5dfe13cdc534c9f11"
-        },
         "parentCategory": "Shopping",
         "subCategories": [
             {
                 "name": "Clothing",
                 "color": "#FF33A8",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f12"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "Electronics",
                 "color": "#33FFF6",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f13"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             },
             {
                 "name": "Accessories",
                 "color": "#F6FF33",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f14"
-                }
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
             }
         ],
         "color": "#FF33A8",
-        "__v": {
-            "$numberInt": "0"
-        },
-        "createdAt": {
-            "$date": {
-                "$numberLong": "1757993173390"
-            }
-        },
-        "updatedAt": {
-            "$date": {
-                "$numberLong": "1757993173390"
-            }
-        }
+        "spaces": [
+            "CASH",
+            "BANK",
+            "CREDIT_CARD"
+        ]
     },
     {
-        "_id": {
-            "$oid": "68c8d8d5dfe13cdc534c9f1d"
-        },
+        "parentCategory": "Housing",
+        "subCategories": [
+            {
+                "name": "Rent",
+                "color": "#8E44AD",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            },
+            {
+                "name": "Utilities",
+                "color": "#3498DB",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            },
+            {
+                "name": "Maintenance",
+                "color": "#E67E22",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            }
+        ],
+        "color": "#8E44AD",
+        "spaces": [
+            "CASH",
+            "BANK",
+            "CREDIT_CARD"
+        ]
+    },
+    {
+        "parentCategory": "Transport",
+        "subCategories": [
+            {
+                "name": "Public Transport",
+                "color": "#2ECC71",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            },
+            {
+                "name": "Fuel",
+                "color": "#E74C3C",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            },
+            {
+                "name": "Taxi / Ride Share",
+                "color": "#F1C40F",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            }
+        ],
+        "color": "#2ECC71",
+        "spaces": [
+            "CASH",
+            "BANK",
+            "CREDIT_CARD"
+        ]
+    },
+    {
+        "parentCategory": "Entertainment",
+        "subCategories": [
+            {
+                "name": "Movies",
+                "color": "#FF8C00",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            },
+            {
+                "name": "Concerts",
+                "color": "#FF1493",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            },
+            {
+                "name": "Games",
+                "color": "#00CED1",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            }
+        ],
+        "color": "#FF8C00",
+        "spaces": [
+            "CASH",
+            "BANK",
+            "CREDIT_CARD"
+        ]
+    },
+    {
+        "parentCategory": "Education",
+        "subCategories": [
+            {
+                "name": "Books",
+                "color": "#8B0000",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            },
+            {
+                "name": "Courses",
+                "color": "#006400",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            },
+            {
+                "name": "Workshops",
+                "color": "#4B0082",
+                "transactionTypes": [
+                    "EXPENSE",
+                    "PURCHASE"
+                ]
+            }
+        ],
+        "color": "#8B0000",
+        "spaces": [
+            "CASH",
+            "BANK",
+            "CREDIT_CARD"
+        ]
+    },
+    {
         "parentCategory": "Income",
         "subCategories": [
             {
                 "name": "Salary",
                 "color": "#1ABC9C",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f1e"
-                }
+                "transactionTypes": [
+                    "INCOME"
+                ]
+            },
+            {
+                "name": "Gifts",
+                "color": "#eb34ab",
+                "transactionTypes": [
+                    "INCOME"
+                ]
+            },
+            {
+                "name": "Interests",
+                "color": "#eb3462",
+                "transactionTypes": [
+                    "INCOME"
+                ]
+            },
+            {
+                "name": "Refunds",
+                "color": "#510763",
+                "transactionTypes": [
+                    "INCOME"
+                ]
+            },
+            {
+                "name": "Rental Income",
+                "color": "#076360",
+                "transactionTypes": [
+                    "INCOME"
+                ]
+            },
+            {
+                "name": "Sale",
+                "color": "#576307",
+                "transactionTypes": [
+                    "INCOME"
+                ]
             },
             {
                 "name": "Freelance",
                 "color": "#9B59B6",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f1f"
-                }
+                "transactionTypes": [
+                    "INCOME"
+                ]
             },
             {
                 "name": "Investments",
                 "color": "#34495E",
-                "_id": {
-                    "$oid": "68c8d8d5dfe13cdc534c9f20"
-                }
+                "transactionTypes": [
+                    "INCOME"
+                ]
             }
         ],
         "color": "#1ABC9C",
-        "__v": {
-            "$numberInt": "0"
-        },
-        "createdAt": {
-            "$date": {
-                "$numberLong": "1757993173390"
-            }
-        },
-        "updatedAt": {
-            "$date": {
-                "$numberLong": "1757993173390"
-            }
-        }
+        "spaces": [
+            "CASH",
+            "BANK"
+        ]
     }
 ]
