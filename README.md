@@ -24,7 +24,7 @@ Your all-in-one personal finance companion to take control of your money with ea
 
 Built with a modern, scalable, and reliable stack:
 
--📝 TypeScript – Strong typing for safer and more maintainable code
+- 📝 TypeScript – Strong typing for safer and more maintainable code
 
 - ⚛️ React – Dynamic and interactive user interface
  
