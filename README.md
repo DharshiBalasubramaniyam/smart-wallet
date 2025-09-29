@@ -19,3 +19,21 @@ Your all-in-one personal finance companion to take control of your money with ea
 - 🎯 Savings Goals – Create and follow personal saving plans to hit your targets faster.
 
 - 🚀 And More… – Continuous updates with new features to make managing money smarter, simpler, and stress-free.
+
+🛠️ Tech Stack
+
+Built with a modern, scalable, and reliable stack:
+
+-📝 TypeScript – Strong typing for safer and more maintainable code
+
+- ⚛️ React – Dynamic and interactive user interface
+ 
+- 🔄 Redux – Centralized state management for predictable flows
+ 
+- 🎨 Tailwind CSS – Sleek, responsive, and modern styling
+
+- 🟢 Node.js – High-performance backend runtime
+
+- 🚏 Express.js – Lightweight, flexible API layer
+
+- 🍃 MongoDB – Fast and scalable NoSQL database
