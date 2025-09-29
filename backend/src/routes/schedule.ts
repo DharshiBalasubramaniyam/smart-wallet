@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import Schedule, { Frequency, RecurringApproval, Repeat } from '../models/schedule';
 import { authenticate } from '../middlewares/auth';
 import Transaction from '../models/transaction';
-import { Schema } from 'mongoose';
 import { getNextDueDate } from '../utils/schedule.util';
 
 const scheduleRouter = express.Router();
@@ -28,7 +27,8 @@ scheduleRouter.post('/', authenticate, async (req: Request, res: Response) => {
             interval: body.interval,
             isAutomated: body.recurringApproval === RecurringApproval.AUTO,
             endDate: body.endDate,
-            isActive: true
+            isActive: true,
+            spaceId: body.spaceId
         })
 
         res.status(201).json({
@@ -80,7 +80,8 @@ scheduleRouter.put('/confirm/:id', authenticate, async (req: Request, res: Respo
             pcategory: schedule.pcategory,
             scategory: schedule.scategory,
             userId: schedule.userId,
-            scheduleId: schedule._id
+            scheduleId: schedule._id,
+            spaceId: schedule.spaceId
         })
 
         // update next due date
@@ -194,7 +195,8 @@ scheduleRouter.put('/:id', authenticate, async (req: Request, res: Response) => 
                 interval: body.interval,
                 isAutomated: body.recurringApproval === RecurringApproval.AUTO,
                 endDate: body.endDate,
-                isActive: true
+                isActive: true,
+                spaceId: body.spaceId
             }
         })
 
@@ -250,7 +252,7 @@ scheduleRouter.get('/user/:spaceid/:limit/:skip', authenticate, async (req: Requ
     try {
         const userId: string = (req as any).user.id;
         const { spaceid, skip, limit } = req.params;
-        const schedules = await Schedule.find({
+        let condition: any = {
             $and: [
                 { userId: userId },
                 {
@@ -260,22 +262,18 @@ scheduleRouter.get('/user/:spaceid/:limit/:skip', authenticate, async (req: Requ
                     ]
                 }
             ]
-        })
+        }
+
+        if (spaceid === "all") {
+            condition = { userId: userId }
+        }
+
+        const schedules = await Schedule.find(condition)
             .skip(Number.parseInt(skip))
             .limit(Number.parseInt(limit))
             .sort({ isActive: -1, nextDueDate: 1 });
 
-        const total = await Schedule.countDocuments({
-            $and: [
-                { userId: userId },
-                {
-                    $or: [
-                        { from: spaceid },
-                        { to: spaceid }
-                    ]
-                }
-            ]
-        });
+        const total = await Schedule.countDocuments(condition);
         res.status(200).json({
             success: true,
             data: {

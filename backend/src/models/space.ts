@@ -20,6 +20,7 @@ export interface ISpace extends Document {
    creditCardLimit: Schema.Types.Decimal128
    creditCardStatementDate: Schema.Types.Date,
    creditCardDueDate: Schema.Types.Date,
+   color: string
    // collaborators: IUser[]
 }
 
@@ -31,6 +32,7 @@ const SpaceSchema: Schema = new Schema({
       default: SpaceType.CASH
    },
    name: { type: String },
+   color: { type: String },
    loanPrincipal: { type: Schema.Types.Decimal128},
    loanStartDate: { type: Schema.Types.Date},
    loanEndDate: { type: Schema.Types.Date},

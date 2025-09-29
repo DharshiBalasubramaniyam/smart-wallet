@@ -73,6 +73,7 @@ spaceRouter.post('/', authenticate, async (req: Request, res: Response) => {
                 pcategory: scategory?.parentCategoryId,
                 scategory: scategory?.subCategoryId,
                 userId: userId,
+                spaceId: space._id,
             }
             await Transaction.create(transaction)
         } else if (req.body.type == SpaceType.LOAN_LENT) {
@@ -103,6 +104,7 @@ spaceRouter.post('/', authenticate, async (req: Request, res: Response) => {
                 pcategory: scategory?.parentCategoryId,
                 scategory: scategory?.subCategoryId,
                 userId: userId,
+                spaceId: space._id,
             }
             await Transaction.create(transaction)
         }
@@ -222,6 +224,7 @@ spaceRouter.put('/:id', authenticate, async (req: Request, res: Response) => {
                 pcategory: scategory?.parentCategoryId,
                 scategory: scategory?.subCategoryId,
                 userId: userId,
+                spaceId: req.body.spaceId,
             }
 
             await Transaction.updateOne({ _id: existingTransaction._id }, { $set: transaction })
@@ -268,6 +271,7 @@ spaceRouter.put('/:id', authenticate, async (req: Request, res: Response) => {
                 pcategory: scategory?.parentCategoryId,
                 scategory: scategory?.subCategoryId,
                 userId: userId,
+                spaceId: req.body.spaceId,
             }
             await Transaction.updateOne({ _id: existingTransaction._id }, { $set: transaction })
         }

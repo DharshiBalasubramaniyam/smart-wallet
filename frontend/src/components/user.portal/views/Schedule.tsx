@@ -1,14 +1,14 @@
 import Button from "../../Button";
 import Input from "../../Input";
 import { useEffect, useState } from 'react';
-import { CategoryInfo, ContinueType, Frequency, RecurringApproval, Repeat, ScheduleInfo, TransactionInfo } from "../../../interfaces/modals"
+import { CategoryInfo, ContinueType, Frequency, RecurringApproval, Repeat, ScheduleInfo } from "../../../interfaces/modals"
 import { toast } from 'react-toastify';
 import { toStrdSpaceType } from "../../../utils/utils";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../redux/store/store";
 import { CategoryService } from "../../../services/category.service";
-import { FaEdit, FaInfoCircle, FaTimes, FaTrash } from "react-icons/fa"
+import { FaEdit, FaTimes, FaTrash } from "react-icons/fa"
 import { TransactionType, transactionTypesInfo } from "./Transactions";
 import { ScheduleService } from "../../../services/schedule.service";
 import ScheduleList from "./Schedules/ScheduleList";
@@ -16,6 +16,8 @@ import ScheduleList from "./Schedules/ScheduleList";
 function Schedule() {
 
    const { spacetype, spaceid } = useParams()
+   const [activeSpaceId, setActiveSpaceId] = useState<string | undefined>(spaceid)
+   const [activeSpaceType, setActiveSpaceType] = useState<string | undefined>(spacetype)
    const { spaces } = useSelector((state: RootState) => state.auth)
    const [inputs, setInputs] = useState<ScheduleInfo>({
       type: "",
@@ -37,14 +39,12 @@ function Schedule() {
    const [newOrEditMode, setNewMode] = useState<boolean>(false)
    const [viewMode, setViewMode] = useState<boolean>(false)
    const [editId, setEditId] = useState<string | null>(null)
-   const [canEditSchedule, setCanEditSchedule] = useState<boolean>(false)
    const [schedules, setSchedules] = useState<any[]>([])
    const [total, setTotal] = useState<any>(0)
    const [categories, setCategories] = useState<CategoryInfo[]>([])
    const [page, setPage] = useState<number>(1);
    const [loading, setLoading] = useState<boolean>(false)
-   const spaceInfo = transactionTypesInfo.find(info => toStrdSpaceType(spacetype) === info.spaceType) || null
-   // const { createTransaction, editTransaction, deleteTransaction, getTransactionsByUser } = TransactionService();
+   const spaceInfo = transactionTypesInfo.find(info => toStrdSpaceType(activeSpaceType) === info.spaceType) || null
    const { createSchedule, deleteSchedule, editSchedule, getSchedulesByUser, confirmSchedule, skipSchedule } = ScheduleService();
    const { getCategories } = CategoryService();
    const pageLimit = 10;
@@ -55,7 +55,7 @@ function Schedule() {
    console.log(categories)
 
    const onView = (schedule: any) => {
-      const info: ScheduleInfo = {
+      const scheduleInfo: ScheduleInfo = {
          amount: schedule.amount.$numberDecimal,
          startDate: schedule.nextDueDate?.split("T")[0] || schedule.startDate?.split("T")[0],
          from: schedule.from,
@@ -70,12 +70,16 @@ function Schedule() {
          recurringApproval: schedule.isAutomated ? RecurringApproval.AUTO : RecurringApproval.MANUAL,
          continue: schedule.endDate ? ContinueType.UNTIL_A_DATE : ContinueType.FOREVER,
          endDate: schedule.endDate ? schedule.endDate.split("T")[0] : null,
-         isClosed: !schedule.isActive
+         isClosed: !schedule.isActive,
+         spaceId: schedule.spaceId
       }
-      console.log(schedule, info);
-      setInputs(info)
+      console.log(schedule, scheduleInfo);
+      setInputs(scheduleInfo)
       setEditId(schedule._id)
-      setCanEditSchedule(schedule.isActive)
+      const spaceType = spaces.find(space => space.id === scheduleInfo.spaceId)?.type
+      console.log(scheduleInfo.type, scheduleInfo.spaceId, spaceType)
+      setActiveSpaceType(spaceType);
+      setActiveSpaceId(scheduleInfo.spaceId)
       setViewMode(true)
    }
 
@@ -97,12 +101,17 @@ function Schedule() {
 
    const onNewOrEditSubmit = async () => {
       console.log(inputs)
+      if (!activeSpaceId) {
+         console.log("No space id found")
+         return;
+      }
+
       if (inputs.amount == 0.0) {
          toast.error("Amount is required!")
          return;
       }
 
-      let finalInputs = inputs;
+      let finalInputs = { ...inputs, spaceId: activeSpaceId };
 
       console.log(finalInputs)
       setLoading(true)
@@ -190,16 +199,29 @@ function Schedule() {
    }
 
    useEffect(() => {
+      if (inputs.type == "") return;
       if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("ACTIVE_SPACE")) {
          setInputs((prev: any) => {
-            return { ...prev, from: spaceid }
+            return { ...prev, from: activeSpaceId }
+         });
+      }
+
+      else if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("OUTSIDE_MYWALLET")) {
+         setInputs((prev: any) => {
+            return { ...prev, from: null }
          });
       }
 
       if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("ACTIVE_SPACE")) {
          console.log("sdsd")
          setInputs((prev: any) => {
-            return { ...prev, to: spaceid }
+            return { ...prev, to: activeSpaceId }
+         });
+      }
+
+      else if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("OUTSIDE_MYWALLET")) {
+         setInputs((prev: any) => {
+            return { ...prev, to: null }
          });
       }
 
@@ -226,6 +248,27 @@ function Schedule() {
          })
       }
    }, [inputs.type])
+
+   useEffect(() => {
+      if (!viewMode) {
+         setInputs({
+            type: "",
+            amount: 0.0,
+            from: null,
+            to: null,
+            note: "",
+            scategory: null,
+            pcategory: null,
+            frequency: "",
+            startDate: getTodayDate(),
+            repeat: Repeat.DAY,
+            interval: 1,
+            recurringApproval: RecurringApproval.AUTO,
+            continue: ContinueType.FOREVER,
+            endDate: null
+         })
+      }
+   }, [activeSpaceType])
 
    useEffect(() => {
       setLoading(true)
@@ -315,8 +358,38 @@ function Schedule() {
                         {editId ? "Edit Schedule" : "New Schedule"}
                      </div>
                      <form className="border-t border-b border-border-light-primary dark:border-border-dark-primary" onSubmit={onSubmit}>
+                        {/* space */}
+                        <div className={spacetype == "all" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary">Space:</label>
+                           <select
+                              className="w-full disabled:opacity-50 p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
+                              value={`${activeSpaceType}-${activeSpaceId}`}
+                              name="type"
+                              disabled={editId != null}
+                              onChange={(e) => {
+                                 const parts = e.target.value.split("-")
+                                 setActiveSpaceType(parts[0])
+                                 setActiveSpaceId(parts[1])
+                              }}
+                           >
+                              <option key={"all"} value={"all-all"} disabled>
+                                 Select Space
+                              </option>
+                              {
+                                 spaces.map((space) => {
+                                    return (
+                                       <option key={space.id} value={`${space.type}-${space.id}`}>
+                                          {space.name.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
+
+                           </select>
+                        </div>
+
                         {/* type */}
-                        <div className="my-3">
+                        <div className={activeSpaceType != "all" ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Type:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
@@ -353,8 +426,8 @@ function Schedule() {
 
                               {
                                  spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("ACTIVE_SPACE") ? (
-                                    <option value={spaceid}>
-                                       {spaces.find(s => s.id == spaceid)?.name.split("-").join(" ").toUpperCase()}
+                                    <option value={activeSpaceId}>
+                                       {spaces.find(s => s.id == activeSpaceId)?.name.split("-").join(" ").toUpperCase()}
                                     </option>
                                  )
                                     : spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("OUTSIDE_MYWALLET") ? (
@@ -396,8 +469,8 @@ function Schedule() {
 
                               {
                                  spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("ACTIVE_SPACE") ? (
-                                    <option value={spaceid}>
-                                       {spaces.find(s => s.id == spaceid)?.name.split("-").join(" ").toUpperCase()}
+                                    <option value={activeSpaceId}>
+                                       {spaces.find(s => s.id == activeSpaceId)?.name.split("-").join(" ").toUpperCase()}
                                     </option>
                                  )
                                     : spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("OUTSIDE_MYWALLET") ? (
@@ -414,7 +487,7 @@ function Schedule() {
                               {
                                  spaces.filter((s) => {
                                     const transactionInfo = spaceInfo?.transactionTypes.find(t => t.type === inputs.type)
-                                    return transactionInfo?.toSpaces.includes(s.type) && s.id != spaceid
+                                    return transactionInfo?.toSpaces.includes(s.type) && s.id != activeSpaceId
                                  }).map((s) => {
                                     return (
                                        <option value={s.id}>
@@ -468,12 +541,12 @@ function Schedule() {
                               }
                               {
                                  allowedSubCategories.map(cat => {
-                                       return (
-                                          <option value={cat.subCategoryId}>
-                                             {cat.subCategoryName}
-                                          </option>
-                                       )
-                                    })
+                                    return (
+                                       <option value={cat.subCategoryId}>
+                                          {cat.subCategoryName}
+                                       </option>
+                                    )
+                                 })
                               }
                            </select>
                         </div>
@@ -668,20 +741,13 @@ function Schedule() {
                      className="relative w-full max-w-lg rounded-lg bg-bg-light-secondary dark:bg-bg-dark-secondary shadow-sm p-3"
                   >
                      <div className="flex justify-between shrink-0 items-center pb-4 text-xl font-medium text-text-light-primary dark:text-text-dark-primary">
-                        View Transaction
+                        View Schedule
                         <div className="flex gap-2">
-                           {
-                              canEditSchedule && (
-                                 <>
-                                    <Button
-                                       text={<FaEdit />}
-                                       onClick={onNewOrEditMode}
-                                       className="max-w-fit pt-2 pb-2"
-                                    />
-
-                                 </>
-                              )
-                           }
+                           <Button
+                              text={<FaEdit />}
+                              onClick={onNewOrEditMode}
+                              className="max-w-fit pt-2 pb-2"
+                           />
                            <Button
                               text={<FaTrash />}
                               onClick={onDelete}
@@ -695,8 +761,31 @@ function Schedule() {
                         </div>
                      </div>
                      <form className="border-t border-border-light-primary dark:border-border-dark-primary" onSubmit={onSubmit}>
-                        {!canEditSchedule && <div className="w-full text-text-light-primary dark:text-text-dark-primary flex p-1 items-center border border-yellow-700 gap-3 rounded *:text-xs"> <FaInfoCircle /> This schedule is closed.</div>}
+                        {/* space */}
+                        <div className={spacetype == "all" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary">Space:</label>
+                           <select
+                              className="w-full disabled:opacity-50 p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
+                              value={`${activeSpaceType}-${activeSpaceId}`}
+                              name="type"
+                              disabled={true}
+                           >
+                              <option key={"all"} value={"all-all"} disabled>
+                                 Select Space
+                              </option>
+                              {
+                                 spaces.map((space) => {
+                                    return (
+                                       <option key={space.id} value={`${space.type}-${space.id}`}>
+                                          {space.name.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
 
+                           </select>
+                        </div>
+                        
                         {/* type */}
                         <div className="my-3">
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Type:</label>

@@ -48,7 +48,26 @@ export function DashboardService() {
         }
     }
 
-    return { getCashBankSummary, getOtherSpaceSummary };
+    async function getAllSpaceSummary(): Promise<any> {
+        try {
+            let response = null
+            response = await api.get(`dashboard/all`, {
+                headers: {
+                    "authorization": `Bearer ${token}`
+                }
+            });
+            console.log("dash", response?.data)
+            if (response?.data.success) {
+                return response?.data.data.object
+            }
+            return []
+        } catch (error) {
+            processError(error)
+            return []
+        }
+    }
+
+    return { getCashBankSummary, getOtherSpaceSummary, getAllSpaceSummary };
 }
 
 function processError(error: unknown): void {

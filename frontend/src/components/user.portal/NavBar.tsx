@@ -1,4 +1,4 @@
-import { Dispatch, useState } from "react";
+import { Dispatch, useEffect, useState } from "react";
 import { MenuIcon } from "../icons";
 import Logo from "../Logo";
 import { useSelector } from "react-redux";
@@ -7,36 +7,65 @@ import { UserPortalView } from "./SideBar";
 import { capitalize, toLocalSpaceType } from "../../utils/utils";
 import { useNavigate, useParams } from "react-router-dom";
 import DropDown from "../Dropdown";
+import { transactionTypesInfo } from "./views/Transactions";
+import { FaGlobe, FaPlus } from "react-icons/fa";
 
 function NavBar({ setSideBarOpen, isSideBarOpen, view, spaceId, setSpaceFormToggle }: { setSideBarOpen: (isopen: boolean) => void, isSideBarOpen: boolean, view: UserPortalView, spaceId: string, setSpaceFormToggle: Dispatch<React.SetStateAction<boolean>> }) {
 
    const [isUserMenuOpen, setUserMenuOpen] = useState<boolean>(false)
    const { email, username, spaces } = useSelector((state: RootState) => state.auth)
-   // const {spaceid} = useParams();
+   const [dropdownItems, setDropDownItems] = useState<string[]>([])
+   const [dropdownIcons, setDropDownIcons] = useState<React.ReactNode[]>([])
+   const [activeDropdownIcon, setActiveDropdownIcon] = useState<React.ReactNode>([])
+   const [activeDropdownText, setActiveDropdownText] = useState<string>("")
    const navigate = useNavigate();
 
    console.log(spaces)
 
-   // const onInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-   //    const { name, value } = e.target as HTMLInputElement;
-   //    if (value === "new") {
-   //       setSpaceFormToggle(true)
-   //       return
-   //    }
-   //    const valueParts = value.split("-")
-   //    navigate(`/user-portal/${valueParts[1].toLowerCase().split("_").join("-")}/${valueParts[0]}/${view}`);
-   // }
-
    const onInputChange = (text: string) => {
-      // const { name, value } = e.target as HTMLInputElement;
       if (text === "New Space") {
          setSpaceFormToggle(true)
          return
       }
       const selectedSpace = spaces.find(sp => sp.name===text)
-      if (!selectedSpace) return
+      if (!selectedSpace) {
+         navigate(`/user-portal/all/all/${view}`);
+         return;
+      }
       navigate(`/user-portal/${toLocalSpaceType(selectedSpace.type)}/${selectedSpace.id}/${view}`);
    }
+
+   useEffect(() => {
+
+      const dropdownItemsL = ["All spaces"]
+      const dropdownIconsL:React.ReactNode[] = [<FaGlobe/>]
+      let title = ""
+      let titleIcon: React.ReactNode = <></>
+      const lastItem = "New Space"
+      const lastIcon = <FaPlus/>
+
+      spaces.forEach(space => {
+         if (space.id === spaceId) {
+            title = space.name,
+            titleIcon = transactionTypesInfo.find(info => info.spaceType === space.type)?.icon
+         }
+         dropdownItemsL.push(space.name)
+         dropdownIconsL.push(transactionTypesInfo.find(info => info.spaceType === space.type)?.icon)
+      })
+
+      if (!title) {
+         title = "All spaces"
+         titleIcon = <FaGlobe/>
+      }
+
+      console.log(dropdownItemsL, title)
+
+      setDropDownIcons(dropdownIconsL);
+      setDropDownItems(dropdownItemsL)
+      setActiveDropdownIcon(titleIcon)
+      setActiveDropdownText(title)
+
+   }, [spaceId, spaces])
 
    return (
       <nav className="fixed top-0 z-50 w-full bg-bg-light-primary dark:bg-bg-dark-primary border-b border-border-light-primary dark:border-border-dark-primary h-20">
@@ -60,9 +89,12 @@ function NavBar({ setSideBarOpen, isSideBarOpen, view, spaceId, setSpaceFormTogg
                </div>
                <div className="max-w-sm ml-3">
                   <DropDown
-                     title={spaces.find(sp => sp.id === spaceId)?.name || ""}
-                     dropdownItems={spaces.map(sp => `${sp.name}`)}
+                     title={activeDropdownText}
+                     titleIcon={activeDropdownIcon}
+                     dropdownItems={dropdownItems}
+                     dropdownIcons={dropdownIcons}
                      lastItem={"New Space"}
+                     lastIcon={<FaPlus/>}
                      onClick={(text) => onInputChange(text)}
                   />
                </div>

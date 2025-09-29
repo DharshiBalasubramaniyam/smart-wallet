@@ -8,7 +8,8 @@ interface ISubCategory {
    _id: Schema.Types.ObjectId;
   name: string;
   color: string;
-  transactionTypes: TransactionType[]
+  transactionTypes: TransactionType[],
+  userId?: Schema.Types.ObjectId | null;
 }
 
 export interface ICategory extends Document {
@@ -21,7 +22,8 @@ export interface ICategory extends Document {
 const SubCategorySchema = new Schema<ISubCategory>({
   name: { type: String, required: true },
   color: { type: String, required: true },
-  transactionTypes: { type: [String], default: [] }
+  transactionTypes: { type: [String], default: [] },
+  userId: {type: Schema.Types.ObjectId, ref: "User", default: null}
 });
 
 const CategorySchema = new Schema<ICategory>({

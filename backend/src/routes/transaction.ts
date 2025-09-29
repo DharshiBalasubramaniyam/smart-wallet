@@ -99,7 +99,7 @@ transactionRouter.get('/user/:spaceid/:limit/:skip', authenticate, async (req: R
     try {
         const userId: string = (req as any).user.id;
         const { spaceid, skip, limit } = req.params;
-        const transactions = await Transaction.find({
+        let condition: any = {
             $and: [
                 { userId: userId },
                 {
@@ -109,22 +109,18 @@ transactionRouter.get('/user/:spaceid/:limit/:skip', authenticate, async (req: R
                     ]
                 }
             ]
-        })
+        }
+
+        if (spaceid === "all") {
+            condition = { userId: userId }
+        }
+
+        const transactions = await Transaction.find(condition)
             .skip(Number.parseInt(skip))
             .limit(Number.parseInt(limit))
             .sort({ date: -1 });
 
-        const total = await Transaction.countDocuments({
-            $and: [
-                { userId: userId },
-                {
-                    $or: [
-                        { from: spaceid },
-                        { to: spaceid }
-                    ]
-                }
-            ]
-        });
+        const total = await Transaction.countDocuments(condition);
         res.status(200).json({
             success: true,
             data: {

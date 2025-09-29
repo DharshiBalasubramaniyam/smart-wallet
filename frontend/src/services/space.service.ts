@@ -65,7 +65,7 @@ export function SpaceService() {
             console.log(response)
             if (response.data.success) {
                 const spaces: {id: string, name: string, type: SpaceType}[] = []
-                response.data.data.object.forEach((s: any) => {
+                response.data?.object?.forEach((s: any) => {
                     spaces.push({id: s._id, name: s.name, type: s.type})
                 })
                 dispatch(setSpaces({ spaces: spaces }))

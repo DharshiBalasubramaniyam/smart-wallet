@@ -13,8 +13,8 @@ export enum RecurringApproval {
     AUTO = "AUTO",
 }
 export enum Frequency {
-    ONE_TIME="ONE_TIME",
-    RECURRENT="RECURRENT"
+    ONE_TIME = "ONE_TIME",
+    RECURRENT = "RECURRENT"
 }
 export interface ISchedule extends Document {
     type: TransactionType,
@@ -30,9 +30,10 @@ export interface ISchedule extends Document {
     nextDueDate: Date,
     recurrent: boolean,
     repeat: Repeat,
-    interval:  number,
+    interval: number,
     isAutomated: boolean,
     isActive: boolean,
+    spaceId: Schema.Types.ObjectId,
 }
 
 const ScheduleSchema: Schema = new Schema({
@@ -77,10 +78,10 @@ const ScheduleSchema: Schema = new Schema({
         type: Schema.Types.Boolean
     },
     repeat: {
-        type: String, 
+        type: String,
         enum: Object.values(Repeat)
     },
-    interval:  {
+    interval: {
         type: Number
     },
     isAutomated: {
@@ -89,6 +90,10 @@ const ScheduleSchema: Schema = new Schema({
     isActive: {
         type: Schema.Types.Boolean
     },
+    spaceId: {
+        type: Schema.Types.ObjectId,
+        ref: "Space"
+    }
 })
 
 export default model<ISchedule>("Schedule", ScheduleSchema)

@@ -4,17 +4,13 @@ export enum TransactionType {
    EXPENSE = 'EXPENSE',
    INCOME = 'INCOME',
    INTERNAL_TRANSFER = 'INTERNAL_TRANSFER',
-   PRINCIPAL_REPAYMENT_RECEIVED = 'PRINCIPAL_REPAYMENT_RECEIVED',
-   PRINCIPAL_REPAYMENT_PAID = 'PRINCIPAL_REPAYMENT_PAID',
-   INTEREST_RECEIVED = 'INTEREST_RECEIVED',
-   INTEREST_PAID = 'INTEREST_PAID',
-   REFUND = 'REFUND',
-   PURCHASE = 'PURCHASE',
-   BILL_PAYMENT = "BILL_PAYMENT",
-   BALANCE_TRANSFER = "BALANCE_TRANSFER",
-   WITHDRAW_CASH = "WITHDRAW_CASH",
-   INTEREST_CHARGED = "INTEREST_CHARGED",
-   LOAN_PRINCIPAL = "LOAN_PRINCIPAL"
+   LOAN_CHARGES = "LOAN_CHARGES",
+   LOAN_PRINCIPAL = "LOAN_PRINCIPAL",
+   BALANCE_INCREASE = "BALANCE_INCREASE",
+   BALANCE_DECREASE = "BALANCE_DECREASE",
+   REPAYMENT_PAID = "REPAYMENT_PAID",
+   REPAYMENT_RECEIVED = "REPAYMENT_RECEIVED",
+   
 }
 
 export interface ITransaction extends Document {
@@ -27,7 +23,8 @@ export interface ITransaction extends Document {
     pcategory: Schema.Types.ObjectId,
     scategory: Schema.Types.ObjectId,
     userId: Schema.Types.ObjectId,
-    scheduleId: Schema.Types.ObjectId
+    scheduleId: Schema.Types.ObjectId,
+    spaceId: Schema.Types.ObjectId,
 }
 
 const TransactionSchema: Schema = new Schema({
@@ -66,6 +63,10 @@ const TransactionSchema: Schema = new Schema({
     scheduleId: {
         type: Schema.Types.ObjectId,
         ref: "Schedule"
+    },
+    spaceId: {
+        type: Schema.Types.ObjectId,
+        ref: "Space"
     }
 })
 

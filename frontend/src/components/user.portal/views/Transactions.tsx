@@ -1,6 +1,6 @@
 import Button from "../../Button";
 import Input from "../../Input";
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CategoryInfo, TransactionInfo } from "../../../interfaces/modals"
 import { toast } from 'react-toastify';
 import { toStrdSpaceType } from "../../../utils/utils";
@@ -10,28 +10,25 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../../redux/store/store";
 import { CategoryService } from "../../../services/category.service";
 import { TransactionService } from "../../../services/transaction.service";
-import { FaEdit, FaInfoCircle, FaTimes, FaTrash } from "react-icons/fa"
+import { FaArrowAltCircleDown, FaArrowAltCircleUp, FaCreditCard, FaEdit, FaInfoCircle, FaMoneyBillWave, FaTimes, FaTrash, FaUniversity } from "react-icons/fa"
 import TransactionList from "./Transactions/TransactionList";
 
 export enum TransactionType {
    EXPENSE = 'EXPENSE',
    INCOME = 'INCOME',
    INTERNAL_TRANSFER = 'INTERNAL_TRANSFER',
-   PRINCIPAL_REPAYMENT_RECEIVED = 'PRINCIPAL_REPAYMENT_RECEIVED',
-   PRINCIPAL_REPAYMENT_PAID = 'PRINCIPAL_REPAYMENT_PAID',
-   INTEREST_RECEIVED = 'INTEREST_RECEIVED',
-   INTEREST_PAID = 'INTEREST_PAID',
-   REFUND = 'REFUND',
-   PURCHASE = 'PURCHASE',
-   BILL_PAYMENT = "BILL_PAYMENT",
-   BALANCE_TRANSFER = "BALANCE_TRANSFER",
-   WITHDRAW_CASH = "WITHDRAW_CASH",
-   INTEREST_CHARGED = "INTEREST_CHARGED",
-   LOAN_PRINCIPAL = "LOAN_PRINCIPAL"
+   LOAN_CHARGES = "LOAN_CHARGES",
+   LOAN_PRINCIPAL = "LOAN_PRINCIPAL",
+   BALANCE_INCREASE = "BALANCE_INCREASE",
+   BALANCE_DECREASE = "BALANCE_DECREASE",
+   REPAYMENT_PAID = "REPAYMENT_PAID",
+   REPAYMENT_RECEIVED = "REPAYMENT_RECEIVED",
+
 }
 
 export interface transactionTypeInfo {
    spaceType: SpaceType;
+   icon: React.ReactNode;
    transactionTypes: {
       type: TransactionType;
       fromSpaces: string[];
@@ -42,6 +39,7 @@ export interface transactionTypeInfo {
 export const transactionTypesInfo: transactionTypeInfo[] = [
    {
       spaceType: SpaceType.CASH,
+      icon: <FaMoneyBillWave />,
       transactionTypes: [
          {
             type: TransactionType.EXPENSE,
@@ -62,6 +60,7 @@ export const transactionTypesInfo: transactionTypeInfo[] = [
    },
    {
       spaceType: SpaceType.BANK,
+      icon: <FaUniversity />,
       transactionTypes: [
          {
             type: TransactionType.EXPENSE,
@@ -82,67 +81,50 @@ export const transactionTypesInfo: transactionTypeInfo[] = [
    },
    {
       spaceType: SpaceType.CREDIT_CARD,
+      icon: <FaCreditCard />,
       transactionTypes: [
          {
-            type: TransactionType.PURCHASE, // increase
+            type: TransactionType.BALANCE_INCREASE, // increase
             toSpaces: ["ACTIVE_SPACE"],
             fromSpaces: ["OUTSIDE_MYWALLET"]
          },
          {
-            type: TransactionType.INTEREST_CHARGED, // increase
+            type: TransactionType.BALANCE_DECREASE, // increase
             toSpaces: ["ACTIVE_SPACE"],
             fromSpaces: ["OUTSIDE_MYWALLET"]
-         },
-         // {
-         //    type: TransactionType.WITHDRAW_CASH, // increase
-         //    toSpaces: ["ACTIVE_SPACE"],
-         //    fromSpaces: ["OUTSIDE_MYWALLET"]
-         // },
-         {
-            type: TransactionType.BILL_PAYMENT, // decrease
-            fromSpaces: [SpaceType.CASH, SpaceType.BANK],
-            toSpaces: ["ACTIVE_SPACE"]
-         },
-         // {
-         //    type: TransactionType.BALANCE_TRANSFER, // decrease
-         //    fromSpaces: ["ACTIVE_SPACE"],
-         //    toSpaces: [SpaceType.CREDIT_CARD]
-         // },
-         {
-            type: TransactionType.REFUND, // decrease
-            fromSpaces: ["OUTSIDE_MYWALLET"],
-            toSpaces: ["ACTIVE_SPACE"]
-         },
+         }
       ]
    },
    {
       spaceType: SpaceType.LOAN_LENT,
+      icon: <FaArrowAltCircleUp />,
       transactionTypes: [
          {
-            type: TransactionType.PRINCIPAL_REPAYMENT_RECEIVED,
+            type: TransactionType.REPAYMENT_RECEIVED,
             fromSpaces: ["ACTIVE_SPACE"],
             toSpaces: [SpaceType.CASH, SpaceType.BANK]
          },
          {
-            type: TransactionType.INTEREST_RECEIVED,
-            toSpaces: [SpaceType.CASH, SpaceType.BANK],
-            fromSpaces: ["ACTIVE_SPACE"]
-         },
+            type: TransactionType.LOAN_CHARGES,
+            fromSpaces: ["ACTIVE_SPACE"],
+            toSpaces: [SpaceType.CASH, SpaceType.BANK]
+         }
       ]
    },
    {
       spaceType: SpaceType.LOAN_BORROWED,
+      icon: <FaArrowAltCircleDown />,
       transactionTypes: [
          {
-            type: TransactionType.PRINCIPAL_REPAYMENT_PAID,
+            type: TransactionType.REPAYMENT_PAID,
             toSpaces: ["ACTIVE_SPACE"],
             fromSpaces: [SpaceType.CASH, SpaceType.BANK]
          },
          {
-            type: TransactionType.INTEREST_PAID,
-            fromSpaces: [SpaceType.CASH, SpaceType.BANK],
-            toSpaces: ["ACTIVE_SPACE"]
-         },
+            type: TransactionType.LOAN_CHARGES,
+            toSpaces: ["ACTIVE_SPACE"],
+            fromSpaces: [SpaceType.CASH, SpaceType.BANK]
+         }
       ]
    },
 ]
@@ -150,18 +132,29 @@ export const transactionTypesInfo: transactionTypeInfo[] = [
 function Transactions() {
 
    const { spacetype, spaceid } = useParams()
+   const [activeSpaceId, setActiveSpaceId] = useState<string | undefined>(spaceid)
+   const [activeSpaceType, setActiveSpaceType] = useState<string | undefined>(spacetype)
    const { spaces } = useSelector((state: RootState) => state.auth)
-   const [inputs, setInputs] = useState<TransactionInfo>({ type: "", amount: 0.0, from: null, to: null, date: getTodayDate(), note: "", scategory: null, pcategory: null });
+   const [inputs, setInputs] = useState<TransactionInfo>({
+      type: "",
+      amount: 0.0,
+      from: null,
+      to: null,
+      date: getTodayDate(),
+      note: "",
+      scategory: null,
+      pcategory: null,
+   });
    const [newOrEditMode, setNewMode] = useState<boolean>(false)
    const [viewMode, setViewMode] = useState<boolean>(false)
    const [editId, setEditId] = useState<string | null>(null)
-   const [canEditTransaction, setCanEditTransaction] = useState<boolean>(false)
+   // const [canEditTransaction, setCanEditTransaction] = useState<boolean>(false)
    const [transactions, setTransactions] = useState<any[]>([])
    const [total, setTotal] = useState<any>(0)
    const [categories, setCategories] = useState<CategoryInfo[]>([])
    const [page, setPage] = useState<number>(1);
    const [loading, setLoading] = useState<boolean>(false)
-   const spaceInfo = transactionTypesInfo.find(info => toStrdSpaceType(spacetype) === info.spaceType) || null
+   const spaceInfo = transactionTypesInfo.find(info => toStrdSpaceType(activeSpaceType) === info.spaceType) || null
    const { createTransaction, editTransaction, deleteTransaction, getTransactionsByUser } = TransactionService();
    const { getCategories } = CategoryService();
    const pageLimit = 10;
@@ -170,7 +163,7 @@ function Transactions() {
    const [allowedSubCategories, setAllowedSubCategories] = useState<CategoryInfo[]>([])
 
    const onView = (transaction: any) => {
-      const info: TransactionInfo = {
+      const transactionInfo: TransactionInfo = {
          amount: transaction.amount.$numberDecimal,
          date: transaction.date.split("T")[0],
          from: transaction.from,
@@ -179,17 +172,16 @@ function Transactions() {
          pcategory: transaction.pcategory,
          scategory: transaction.scategory,
          type: transaction.type,
-         scheduleId: transaction?.scheduleId || null
+         scheduleId: transaction?.scheduleId || null,
+         spaceId: transaction.spaceId
       }
-      console.log(transaction, info);
-      setInputs(info)
+      console.log(transaction, transactionInfo);
+      setInputs(transactionInfo)
       setEditId(transaction._id)
-      setCanEditTransaction(
-         transactionTypesInfo
-            .find(info => info.spaceType === toStrdSpaceType(spacetype))
-            ?.transactionTypes
-            .map(type => type.type).includes(transaction.type) || false
-      )
+      const spaceType = spaces.find(space => space.id === transactionInfo.spaceId)?.type
+      console.log(transactionInfo.type, transactionInfo.spaceId, spaceType)
+      setActiveSpaceType(spaceType);
+      setActiveSpaceId(transactionInfo.spaceId)
       setViewMode(true)
    }
 
@@ -211,41 +203,24 @@ function Transactions() {
 
    const onNewOrEditSubmit = async () => {
       console.log(inputs)
+      if (!activeSpaceId) {
+         console.log("No space id found")
+         return;
+      }
       if (inputs.amount == 0.0) {
          toast.error("Amount is required!")
          return;
       }
 
       let finalInputs = inputs;
-
-      // if (inputs.type === TransactionType.PRINCIPAL_REPAYMENT_RECEIVED || inputs.type === TransactionType.PRINCIPAL_REPAYMENT_PAID) {
-      //    const pcategory = categories.find((cat) => cat.parentCategory === "loan");
-      //    const scategory = pcategory?.subCategories.find((cat) => cat.name === "repayment")
-      //    finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      // }
-
-      // else if (inputs.type === TransactionType.INTEREST_PAID || inputs.type === TransactionType.INTEREST_RECEIVED) {
-      //    const pcategory = categories.find((cat) => cat.parentCategory === "loan");
-      //    const scategory = pcategory?.subCategories.find((cat) => cat.name === "interest")
-      //    finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      // }
-
-      // else if (inputs.type === TransactionType.INTERNAL_TRANSFER) {
-      //    const pcategory = categories.find((cat) => cat.parentCategory === "Miscellaneous");
-      //    const scategory = pcategory?.subCategories.find((cat) => cat.name === "transfer")
-      //    finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      // }
-
-      // else if (inputs.type === TransactionType.BILL_PAYMENT) {
-      //    const pcategory = categories.find((cat) => cat.parentCategory === "Miscellaneous");
-      //    const scategory = pcategory?.subCategories.find((cat) => cat.name === "bills")
-      //    finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      // }
-
       setLoading(true)
       if (editId) {
+         finalInputs = { ...inputs, spaceId: activeSpaceId }
+         console.log(finalInputs)
          await editTransaction(editId, finalInputs)
       } else {
+         finalInputs = { ...inputs, spaceId: activeSpaceId }
+         console.log(finalInputs)
          await createTransaction(finalInputs)
       }
       getTransactionsByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
@@ -280,26 +255,34 @@ function Transactions() {
       setViewMode(false)
       setNewMode(false)
       setEditId(null)
+      setActiveSpaceType(spacetype)
+      setActiveSpaceId(spaceid)
       setInputs({ type: "", amount: 0.0, from: null, to: null, date: getTodayDate(), note: "", scategory: null, pcategory: null })
    }
 
    useEffect(() => {
+      if (inputs.type == "") return;
       if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("ACTIVE_SPACE")) {
          setInputs((prev: any) => {
-            return { ...prev, from: spaceid }
+            return { ...prev, from: activeSpaceId }
+         });
+      }
+
+      else if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("OUTSIDE_MYWALLET")) {
+         setInputs((prev: any) => {
+            return { ...prev, from: null }
          });
       }
 
       if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("ACTIVE_SPACE")) {
-         console.log("sdsd")
          setInputs((prev: any) => {
-            return { ...prev, to: spaceid }
+            return { ...prev, to: activeSpaceId }
          });
       }
 
-      if (inputs.type == TransactionType.INCOME) {
+      else if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("OUTSIDE_MYWALLET")) {
          setInputs((prev: any) => {
-            return { ...prev, pcategory: categories.find((c) => c.parentCategory === "Income")?._id }
+            return { ...prev, to: null }
          });
       }
 
@@ -309,12 +292,11 @@ function Transactions() {
             parentCategoryId: cat.parentCategoryId,
             parentCategory: cat.parentCategory
          }));
-      setAllowedParentCategories([
-         ...new Map(
-            pcategories.map(cat => [cat.parentCategoryId, cat])
-         ).values()
-      ])
-      if (pcategories.length === 1) {
+      const distinctpcategories = [...new Map(
+         pcategories.map(cat => [cat.parentCategoryId, cat])).values()
+      ]
+      setAllowedParentCategories(distinctpcategories)
+      if (distinctpcategories.length === 1) {
          setInputs((prev: any) => {
             return { ...prev, pcategory: pcategories[0].parentCategoryId }
          })
@@ -322,9 +304,21 @@ function Transactions() {
    }, [inputs.type])
 
    useEffect(() => {
+      console.log("hello", activeSpaceType)
+      if (!viewMode) {
+         setInputs({ type: "", amount: 0.0, from: null, to: null, date: getTodayDate(), note: "", scategory: null, pcategory: null })
+      }
+   }, [activeSpaceType])
+
+
+   console.log(inputs, activeSpaceType, allowedParentCategories)
+
+   useEffect(() => {
+      setActiveSpaceId(spaceid)
+      setActiveSpaceType(spacetype)
       setLoading(true)
 
-      getCategories(toStrdSpaceType(spacetype))
+      getCategories(toStrdSpaceType(activeSpaceType))
          .then((res) => setCategories(res))
          .catch((err) => setCategories([]))
 
@@ -353,8 +347,6 @@ function Transactions() {
 
    if (loading) return <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Loading...</h1>
 
-   console.log("inputs", inputs, categories, allowedParentCategories, allowedSubCategories)
-
    return (
       <>
          {/* sub header */}
@@ -362,7 +354,7 @@ function Transactions() {
             <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Transactions</h1>
             <div className="flex justify-end gap-3 items-center">
                {
-                  (!loading && transactions.length != 0) && (
+                  (!loading && transactions?.length != 0) && (
                      <>
                         <Button
                            text={`${(page - 1) * pageLimit + 1}-${(page - 1) * pageLimit + (transactions?.length)} of ${total}`}
@@ -410,8 +402,38 @@ function Transactions() {
                         {editId ? "Edit Transaction" : "New Transaction"}
                      </div>
                      <form className="border-t border-b border-border-light-primary dark:border-border-dark-primary" onSubmit={onSubmit}>
+                        {/* space */}
+                        <div className={spacetype == "all" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary">Space:</label>
+                           <select
+                              className="w-full disabled:opacity-50 p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
+                              value={`${activeSpaceType}-${activeSpaceId}`}
+                              name="type"
+                              disabled={editId != null}
+                              onChange={(e) => {
+                                 const parts = e.target.value.split("-")
+                                 setActiveSpaceType(parts[0])
+                                 setActiveSpaceId(parts[1])
+                              }}
+                           >
+                              <option key={"all"} value={"all-all"} disabled>
+                                 Select Space
+                              </option>
+                              {
+                                 spaces.map((space) => {
+                                    return (
+                                       <option key={space.id} value={`${space.type}-${space.id}`}>
+                                          {space.name.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
+
+                           </select>
+                        </div>
+
                         {/* type */}
-                        <div className="my-3">
+                        <div className={activeSpaceType != "all" ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary">Type:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
@@ -419,13 +441,13 @@ function Transactions() {
                               name="type"
                               onChange={onInputChange}
                            >
-                              <option value={""}>
+                              <option key={""} value={""}>
                                  Select type
                               </option>
                               {
                                  spaceInfo?.transactionTypes.map((t) => {
                                     return (
-                                       <option value={t.type}>
+                                       <option key={t.type} value={t.type}>
                                           {t.type.split("_").join(" ")}
                                        </option>
                                     )
@@ -448,8 +470,8 @@ function Transactions() {
 
                               {
                                  spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("ACTIVE_SPACE") ? (
-                                    <option value={spaceid}>
-                                       {spaces.find(s => s.id == spaceid)?.name.split("-").join(" ").toUpperCase()}
+                                    <option value={activeSpaceId}>
+                                       {spaces.find(s => s.id == activeSpaceId)?.name.split("-").join(" ").toUpperCase()}
                                     </option>
                                  )
                                     : spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("OUTSIDE_MYWALLET") ? (
@@ -458,7 +480,7 @@ function Transactions() {
                                        </option>
                                     ) :
                                        (
-                                          <option value={""}>
+                                          <option value={""} disabled>
                                              Select Space
                                           </option>
                                        )
@@ -491,8 +513,8 @@ function Transactions() {
 
                               {
                                  spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("ACTIVE_SPACE") ? (
-                                    <option value={spaceid}>
-                                       {spaces.find(s => s.id == spaceid)?.name.split("-").join(" ").toUpperCase()}
+                                    <option value={activeSpaceId}>
+                                       {spaces.find(s => s.id == activeSpaceId)?.name.split("-").join(" ").toUpperCase()}
                                     </option>
                                  )
                                     : spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("OUTSIDE_MYWALLET") ? (
@@ -509,7 +531,7 @@ function Transactions() {
                               {
                                  spaces.filter((s) => {
                                     const transactionInfo = spaceInfo?.transactionTypes.find(t => t.type === inputs.type)
-                                    return transactionInfo?.toSpaces.includes(s.type) && s.id != spaceid
+                                    return transactionInfo?.toSpaces.includes(s.type) && s.id != activeSpaceId
                                  }).map((s) => {
                                     return (
                                        <option value={s.id}>
@@ -642,7 +664,7 @@ function Transactions() {
                         View Transaction
                         <div className="flex gap-2">
                            {
-                              canEditTransaction && (
+                              inputs.type != TransactionType.LOAN_PRINCIPAL && (
                                  <>
                                     <Button
                                        text={<FaEdit />}
@@ -657,7 +679,6 @@ function Transactions() {
                                  </>
                               )
                            }
-
                            <Button
                               text={<FaTimes />}
                               onClick={onCancel}
@@ -666,7 +687,30 @@ function Transactions() {
                         </div>
                      </div>
                      <form className="border-t border-border-light-primary dark:border-border-dark-primary" onSubmit={onSubmit}>
-                        {!canEditTransaction && <div className="w-full text-text-light-primary dark:text-text-dark-primary flex p-1 items-center border border-yellow-700 gap-3 rounded *:text-xs"> <FaInfoCircle /> This transaction is managed via one of your other spaces.</div>}
+                        {/* space */}
+                        <div className={spacetype == "all" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary">Space:</label>
+                           <select
+                              className="w-full disabled:opacity-50 p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
+                              value={`${activeSpaceType}-${activeSpaceId}`}
+                              name="type"
+                              disabled={true}
+                           >
+                              <option key={"all"} value={"all-all"} disabled>
+                                 Select Space
+                              </option>
+                              {
+                                 spaces.map((space) => {
+                                    return (
+                                       <option key={space.id} value={`${space.type}-${space.id}`}>
+                                          {space.name.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
+
+                           </select>
+                        </div>
 
                         {/* type */}
                         <div className="my-3">
@@ -831,7 +875,7 @@ function Transactions() {
 
          {/* loading */}
          {
-            (!loading && transactions.length == 0) && <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary text-center mt-48">No transactions found!</h1>
+            (!loading && transactions?.length == 0) && <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary text-center mt-48">No transactions found!</h1>
          }
 
          {/* transaction list */}

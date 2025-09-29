@@ -2,16 +2,13 @@ import { useEffect, useRef, useState } from "react"
 
 interface DropDownProps {
     title: string
-    titleIcon?: React.ReactNode
     headerTexts?: string[]
     dropdownItems: string[]
-    dropdownIcons?: React.ReactNode[]
     lastItem?: string
-    lastIcon?: React.ReactNode
     onClick: (text: string) => void
 }
 
-function DropDown({ title, titleIcon, headerTexts, dropdownItems, dropdownIcons, lastItem, lastIcon, onClick }: DropDownProps) {
+function DropDown({ title, headerTexts, dropdownItems, lastItem, onClick }: DropDownProps) {
     const [dropdowntoggle, setDropdowntoggle] = useState(false)
     const dropdownBtnRef = useRef<HTMLDivElement>(null)
 
@@ -36,11 +33,8 @@ function DropDown({ title, titleIcon, headerTexts, dropdownItems, dropdownIcons,
         <div className="relative *:text-text-light-primary dark:text-text-dark-primary w-full">
             <button id="dropdownInformationButton" data-dropdown-toggle="dropdownInformation"
                 onClick={() => setDropdowntoggle(true)}
-                className="mr-3 py-2 px-3 border-2 border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm text-center inline-flex gap-3 items-center capitalize" type="button">
-                    {titleIcon && titleIcon}
-                    {title}
-                    <svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4" />
+                className="mr-3 py-2 px-3 border-2 border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm text-center inline-flex items-center capitalize" type="button">{title}<svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
                 </svg>
             </button>
 
@@ -62,10 +56,9 @@ function DropDown({ title, titleIcon, headerTexts, dropdownItems, dropdownIcons,
                         }
                         <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownInformationButton">
                             {
-                                dropdownItems.map((item, index) => {
+                                dropdownItems.map(item => {
                                     return (
-                                        <li key={item} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white capitalize cursor-pointer" onClick={() => onSelect(item)}>
-                                            {dropdownIcons && dropdownIcons.length === dropdownItems.length && dropdownIcons[index]}
+                                        <li key={item} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white capitalize cursor-pointer" onClick={() => onSelect(item)}>
                                             {item}
                                         </li>
                                     )
@@ -76,10 +69,7 @@ function DropDown({ title, titleIcon, headerTexts, dropdownItems, dropdownIcons,
                         {
                             lastItem && (
                                 <div className="py-2" onClick={() => onSelect(lastItem)}>
-                                    <span className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white capitalize cursor-pointer">
-                                        {lastIcon && lastIcon}
-                                        {lastItem}
-                                    </span>
+                                    <span className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white capitalize cursor-pointer">{lastItem}</span>
                                 </div>
                             )
                         }

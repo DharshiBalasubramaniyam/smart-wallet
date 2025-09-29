@@ -3,6 +3,7 @@ import Transaction, { TransactionType } from '../models/transaction';
 import Space, { SpaceType } from '../models/space';
 import { authenticate } from '../middlewares/auth';
 import mongoose from 'mongoose';
+import Cat from '../models/category';
 
 const dashboardRouter = express.Router();
 const ObjectId = mongoose.Types.ObjectId;
@@ -101,7 +102,7 @@ dashboardRouter.get('/cash/:spaceid/:from/:to', authenticate, async (req: Reques
                     userId: new ObjectId(userId),
                     date: { $gte: new Date(from), $lte: new Date(to) },
                     from: new ObjectId(spaceid),
-                    pcategory: {$ne: null}
+                    pcategory: { $ne: null }
                 },
             },
             // Group by category IDs
@@ -142,7 +143,7 @@ dashboardRouter.get('/cash/:spaceid/:from/:to', authenticate, async (req: Reques
                     userId: new ObjectId(userId),
                     date: { $gte: new Date(from), $lte: new Date(to) },
                     from: new ObjectId(spaceid),
-                    pcategory: {$ne: null}
+                    pcategory: { $ne: null }
                 }
             },
             // Group by category IDs
@@ -417,11 +418,33 @@ dashboardRouter.get('/loan-lent/:spaceid', authenticate, async (req: Request, re
     try {
         const userId: string = (req as any).user.id;
         const { spaceid } = req.params
+
+        const categories = await Cat.aggregate([
+            { $match: { spaces: SpaceType.LOAN_LENT } },
+
+            { $unwind: "$subCategories" },
+
+            {
+                $project: {
+                    parentCategoryId: "$_id",
+                    parentCategory: 1,
+                    spaces: 1,
+                    subCategoryId: "$subCategories._id",
+                    subCategoryName: "$subCategories.name",
+                    transactionTypes: "$subCategories.transactionTypes"
+                }
+            }
+        ])
+
+        const principalReceivedCategoryId = categories.find(cat => cat.subCategoryName === "Principal Repayment").subCategoryId;
+        const interestReceivedCategoryId = categories.find(cat => cat.subCategoryName === "Interest").subCategoryId;
+
         const principalReceived = await Transaction.aggregate([
             {
                 $match: {
                     from: new ObjectId(spaceid),
-                    type: TransactionType.PRINCIPAL_REPAYMENT_RECEIVED
+                    type: TransactionType.REPAYMENT_RECEIVED,
+                    scategory: principalReceivedCategoryId
                 }
             },
             {
@@ -443,7 +466,8 @@ dashboardRouter.get('/loan-lent/:spaceid', authenticate, async (req: Request, re
             {
                 $match: {
                     from: new ObjectId(spaceid),
-                    type: TransactionType.INTEREST_RECEIVED
+                    type: TransactionType.REPAYMENT_RECEIVED,
+                    scategory: interestReceivedCategoryId
                 }
             },
             {
@@ -509,12 +533,34 @@ dashboardRouter.get('/loan-lent/:spaceid', authenticate, async (req: Request, re
 dashboardRouter.get('/loan-borrowed/:spaceid', authenticate, async (req: Request, res: Response) => {
     try {
         const userId: string = (req as any).user.id;
-        const { spaceid } = req.params
+        const { spaceid } = req.params;
+
+        const categories = await Cat.aggregate([
+            { $match: { spaces: SpaceType.LOAN_BORROWED } },
+
+            { $unwind: "$subCategories" },
+
+            {
+                $project: {
+                    parentCategoryId: "$_id",
+                    parentCategory: 1,
+                    spaces: 1,
+                    subCategoryId: "$subCategories._id",
+                    subCategoryName: "$subCategories.name",
+                    transactionTypes: "$subCategories.transactionTypes"
+                }
+            }
+        ])
+
+        const principalPaidCategoryId = categories.find(cat => cat.subCategoryName === "Principal Repayment").subCategoryId;
+        const interestPaidCategoryId = categories.find(cat => cat.subCategoryName === "Interest").subCategoryId;
+
         const principalPaid = await Transaction.aggregate([
             {
                 $match: {
                     to: new ObjectId(spaceid),
-                    type: TransactionType.PRINCIPAL_REPAYMENT_PAID
+                    type: TransactionType.REPAYMENT_PAID,
+                    scategory: principalPaidCategoryId
                 }
             },
             {
@@ -536,7 +582,8 @@ dashboardRouter.get('/loan-borrowed/:spaceid', authenticate, async (req: Request
             {
                 $match: {
                     to: new ObjectId(spaceid),
-                    type: TransactionType.INTEREST_PAID
+                    type: TransactionType.REPAYMENT_PAID,
+                    scategory: interestPaidCategoryId
                 }
             },
             {
@@ -603,28 +650,25 @@ dashboardRouter.get('/credit-card/:spaceid', authenticate, async (req: Request, 
     try {
         const userId: string = (req as any).user.id;
         const { spaceid } = req.params
+
         const totalBalance = await Transaction.aggregate([
             {
                 $match: {
                     $and: [
+                        { userId: { $eq: new ObjectId(userId) } },
                         {
                             $or: [
                                 { to: new ObjectId(spaceid) },
                                 { from: new ObjectId(spaceid) },
                             ],
                         },
-                        {
-                            $or: [
-                                { type: TransactionType.PURCHASE },
-                                { type: TransactionType.INTEREST_CHARGED }
-                            ]
-                        }
+                        { type: { $eq: TransactionType.BALANCE_INCREASE } }
                     ]
                 }
             },
             {
                 $group: {
-                    _id: null, // null means group all documents that matched
+                    _id: null,
                     total: { $sum: "$amount" }
                 }
             },
@@ -641,24 +685,20 @@ dashboardRouter.get('/credit-card/:spaceid', authenticate, async (req: Request, 
             {
                 $match: {
                     $and: [
+                        { userId: { $eq: new ObjectId(userId) } },
                         {
                             $or: [
                                 { to: new ObjectId(spaceid) },
                                 { from: new ObjectId(spaceid) },
                             ],
                         },
-                        {
-                            $or: [
-                                { type: TransactionType.BILL_PAYMENT },
-                                { type: TransactionType.REFUND }
-                            ]
-                        }
+                        { type: { $eq: TransactionType.BALANCE_DECREASE } }
                     ]
                 }
             },
             {
                 $group: {
-                    _id: null, // null means group all documents that matched
+                    _id: null,
                     total: { $sum: "$amount" }
                 }
             },
@@ -701,6 +741,545 @@ dashboardRouter.get('/credit-card/:spaceid', authenticate, async (req: Request, 
             error: null
         });
 
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        res.status(500).json({
+            success: false,
+            error: { message: 'Error finding dashboard info: ' + errorMessage },
+            data: null
+        });
+    }
+})
+
+dashboardRouter.get("/all", authenticate, async (req: Request, res: Response) => {
+    const userId: string = (req as any).user.id;
+    // const { userId } = req.params
+
+    // cash totoal income
+    try {
+        let totalCashAssetAmount = 0;
+        let totalBankAssetAmount = 0;
+        let totalLoanLentAssetAmount = 0;
+        let totalLoanBorrowedLiabilityAmount = 0;
+        let totalCreditcardLiabilityAmount = 0
+
+        // cash
+        const cashTotalIncome = await Transaction.aggregate([
+            {
+                $lookup: {
+                    from: "spaces",
+                    as: "toSpace",
+                    localField: "to",
+                    foreignField: "_id"
+                },
+
+            },
+
+            {
+                $unwind: "$toSpace"
+            },
+
+            {
+                $match: {
+                    "userId": new ObjectId(userId),
+                    "toSpace.type": SpaceType.CASH,
+                }
+            },
+
+            {
+                $group: {
+                    _id: { spaceId: "$toSpace._id", spaceName: "$toSpace.name", spaceType: "$toSpace.type", color: "$toSpace.color" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    spaceName: "$_id.spaceName",
+                    spaceType: "$_id.spaceType",
+                    color: "$_id.color",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const cashTotalExpense = await Transaction.aggregate([
+            {
+                $lookup: {
+                    from: "spaces",
+                    as: "fromSpace",
+                    localField: "from",
+                    foreignField: "_id"
+                },
+
+            },
+
+            {
+                $unwind: "$fromSpace"
+            },
+
+            {
+                $match: {
+                    "userId": new ObjectId(userId),
+                    "fromSpace.type": SpaceType.CASH,
+                }
+            },
+
+            {
+                $group: {
+                    _id: { spaceId: "$fromSpace._id", spaceName: "$fromSpace.name", spaceType: "$fromSpace.type", color: "$fromSpace.color" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    spaceName: "$_id.spaceName",
+                    spaceType: "$_id.spaceType",
+                    color: "$_id.color",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const cashAssetsInfo = cashTotalIncome.map((rec) => {
+            const totalExpense = cashTotalExpense.find(rec2 => String(rec2.id) === String(rec.id));
+            const expenseAmount = totalExpense?.amount || 0;
+            totalCashAssetAmount += rec.amount - expenseAmount
+            return {
+                id: rec.id,
+                x: rec.spaceName,
+                spaceType: rec.spaceType,
+                totalIncome: rec.amount,
+                totalExpense: expenseAmount,
+                color: rec.color,
+                y: rec.amount - expenseAmount
+            }
+        })
+
+        // bank
+        const bankTotalIncome = await Transaction.aggregate([
+            {
+                $lookup: {
+                    from: "spaces",
+                    as: "toSpace",
+                    localField: "to",
+                    foreignField: "_id"
+                },
+
+            },
+
+            {
+                $unwind: "$toSpace"
+            },
+
+            {
+                $match: {
+                    "userId": new ObjectId(userId),
+                    "toSpace.type": SpaceType.BANK,
+                }
+            },
+
+            {
+                $group: {
+                    _id: { spaceId: "$toSpace._id", spaceName: "$toSpace.name", spaceType: "$toSpace.type", color: "$toSpace.color" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    spaceName: "$_id.spaceName",
+                    spaceType: "$_id.spaceType",
+                    color: "$_id.color",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const bankTotalExpense = await Transaction.aggregate([
+            {
+                $lookup: {
+                    from: "spaces",
+                    as: "fromSpace",
+                    localField: "from",
+                    foreignField: "_id"
+                },
+
+            },
+
+            {
+                $unwind: "$fromSpace"
+            },
+
+            {
+                $match: {
+                    "userId": new ObjectId(userId),
+                    "fromSpace.type": SpaceType.BANK,
+                }
+            },
+
+            {
+                $group: {
+                    _id: { spaceId: "$fromSpace._id", spaceName: "$fromSpace.name", spaceType: "$fromSpace.type", color: "$fromSpace.color" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    spaceName: "$_id.spaceName",
+                    spaceType: "$_id.spaceType",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const bankAssetsInfo = bankTotalIncome.map((rec) => {
+            const totalExpense = bankTotalExpense.find(rec2 => String(rec2.id) === String(rec.id));
+            const expenseAmount = totalExpense?.amount || 0;
+            totalBankAssetAmount += rec.amount - expenseAmount
+            return {
+                id: rec.id,
+                x: rec.spaceName,
+                spaceType: rec.spaceType,
+                totalIncome: rec.amount,
+                totalExpense: expenseAmount,
+                color: rec.color,
+                y: rec.amount - expenseAmount
+            }
+        })
+
+        // loan lent
+        const totalLoanLentPrincipal = await Transaction.aggregate([
+            {
+                $match: {
+                    "userId": new ObjectId(userId),
+                    "type": TransactionType.LOAN_PRINCIPAL
+                },
+            },
+
+            {
+                $lookup: {
+                    from: "spaces",
+                    as: "space",
+                    localField: "spaceId",
+                    foreignField: "_id"
+                },
+
+            },
+
+            {
+                $unwind: "$space"
+            },
+
+            {
+                $match: {
+                    "space.type": SpaceType.LOAN_LENT,
+                }
+            },
+
+            {
+                $group: {
+                    _id: { spaceId: "$space._id", spaceName: "$space.name", spaceType: "$space.type", color: "$space.color" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    spaceName: "$_id.spaceName",
+                    spaceType: "$_id.spaceType",
+                    color: "$_id.color",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const loanlentcategories = await Cat.aggregate([
+            { $match: { spaces: SpaceType.LOAN_LENT } },
+
+            { $unwind: "$subCategories" },
+
+            {
+                $project: {
+                    parentCategoryId: "$_id",
+                    parentCategory: 1,
+                    spaces: 1,
+                    subCategoryId: "$subCategories._id",
+                    subCategoryName: "$subCategories.name",
+                    transactionTypes: "$subCategories.transactionTypes"
+                }
+            }
+        ])
+
+        const principalReceivedCategoryId = loanlentcategories.find(cat => cat.subCategoryName === "Principal Repayment").subCategoryId;
+
+        const totalLoanLentRepayment = await Transaction.aggregate([
+            {
+                $match: {
+                    "userId": new ObjectId(userId),
+                    "type": TransactionType.REPAYMENT_RECEIVED,
+                    "scategory": new ObjectId(principalReceivedCategoryId)
+                },
+            },
+
+            {
+                $group: {
+                    _id: { spaceId: "$spaceId" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const loanlentAssetsInfo = totalLoanLentPrincipal.map((rec) => {
+            const totalExpense = totalLoanLentRepayment.find(rec2 => String(rec2.id) === String(rec.id));
+            const expenseAmount = totalExpense?.amount || 0;
+            totalLoanLentAssetAmount += rec.amount - expenseAmount
+            return {
+                id: rec.id,
+                x: rec.spaceName,
+                spaceType: rec.spaceType,
+                totalIncome: rec.amount,
+                color: rec.color,
+                totalExpense: expenseAmount,
+                y: rec.amount - expenseAmount
+            }
+        })
+
+        // loan borrowed
+        const totalLoanBorrowedPrincipal = await Transaction.aggregate([
+            {
+                $match: {
+                    "userId": new ObjectId(userId),
+                    "type": TransactionType.LOAN_PRINCIPAL
+                },
+            },
+
+            {
+                $lookup: {
+                    from: "spaces",
+                    as: "space",
+                    localField: "spaceId",
+                    foreignField: "_id"
+                },
+
+            },
+
+            {
+                $unwind: "$space"
+            },
+
+            {
+                $match: {
+                    "space.type": SpaceType.LOAN_BORROWED,
+                }
+            },
+
+            {
+                $group: {
+                    _id: { spaceId: "$space._id", spaceName: "$space.name", spaceType: "$space.type", color: "$space.color" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    spaceName: "$_id.spaceName",
+                    spaceType: "$_id.spaceType",
+                    color: "$_id.color",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const loanborrowedcategories = await Cat.aggregate([
+            { $match: { spaces: SpaceType.LOAN_BORROWED } },
+
+            { $unwind: "$subCategories" },
+
+            {
+                $project: {
+                    parentCategoryId: "$_id",
+                    parentCategory: 1,
+                    spaces: 1,
+                    subCategoryId: "$subCategories._id",
+                    subCategoryName: "$subCategories.name",
+                    transactionTypes: "$subCategories.transactionTypes"
+                }
+            }
+        ])
+
+        const principalPaidCategoryId = loanborrowedcategories.find(cat => cat.subCategoryName === "Principal Repayment").subCategoryId;
+
+        const totalLoanBorrowedRepayment = await Transaction.aggregate([
+            {
+                $match: {
+                    "userId": new ObjectId(userId),
+                    "type": TransactionType.REPAYMENT_PAID,
+                    "scategory": new ObjectId(principalPaidCategoryId)
+                },
+            },
+
+            {
+                $group: {
+                    _id: { spaceId: "$spaceId" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const loanborrowedLiabiltitiesInfo = totalLoanBorrowedPrincipal.map((rec) => {
+            const totalExpense = totalLoanBorrowedRepayment.find(rec2 => String(rec2.id) === String(rec.id));
+            const expenseAmount = totalExpense?.amount || 0;
+            totalLoanBorrowedLiabilityAmount += rec.amount - expenseAmount
+            return {
+                id: rec.id,
+                x: rec.spaceName,
+                spaceType: rec.spaceType,
+                totalIncome: rec.amount,
+                color: rec.color,
+                totalExpense: expenseAmount,
+                y: rec.amount - expenseAmount
+            }
+        })
+
+        // credit card
+        const creditcardTotalBalance = await Transaction.aggregate([
+            {
+                $match: {
+                    $and: [
+                        { userId: { $eq: new ObjectId(userId) } },
+                        { type: { $eq: TransactionType.BALANCE_INCREASE } }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "spaces",
+                    as: "space",
+                    localField: "spaceId",
+                    foreignField: "_id"
+                },
+
+            },
+
+            {
+                $unwind: "$space"
+            },
+            {
+                $group: {
+                    _id: { spaceId: "$space._id", spaceName: "$space.name", spaceType: "$space.type", color: "$space.color" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    spaceName: "$_id.spaceName",
+                    spaceType: "$_id.spaceType",
+                    color: "$_id.color",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+        const creditcardTotalPayment = await Transaction.aggregate([
+            {
+                $match: {
+                    $and: [
+                        { userId: { $eq: new ObjectId(userId) } },
+                        { type: { $eq: TransactionType.BALANCE_DECREASE } }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "spaces",
+                    as: "space",
+                    localField: "spaceId",
+                    foreignField: "_id"
+                },
+
+            },
+
+            {
+                $unwind: "$space"
+            },
+            {
+                $group: {
+                    _id: { spaceId: "$space._id", spaceName: "$space.name", spaceType: "$space.type" },
+                    total: { $sum: "$amount" }
+                }
+            },
+
+            {
+                $project: {
+                    _id: 0,
+                    id: "$_id.spaceId",
+                    spaceName: "$_id.spaceName",
+                    spaceType: "$_id.spaceType",
+                    amount: { $toDouble: "$total" }
+                }
+            }
+        ])
+
+        const creditcardLiabiltitiesInfo = creditcardTotalBalance.map((rec) => {
+            const totalExpense = creditcardTotalPayment.find(rec2 => String(rec2.id) === String(rec.id));
+            const expenseAmount = totalExpense?.amount || 0;
+            totalCreditcardLiabilityAmount += rec.amount - expenseAmount
+            return {
+                id: rec.id,
+                x: rec.spaceName,
+                spaceType: rec.spaceType,
+                totalIncome: rec.amount,
+                color: rec.color,
+                totalExpense: expenseAmount,
+                y: rec.amount - expenseAmount
+            }
+        })
+
+        res.status(200).json({
+            success: true,
+            data: {
+                object: {
+                    assetsInfo: [...cashAssetsInfo, ...bankAssetsInfo, ...loanlentAssetsInfo],
+                    liabilitiesInfo: [...loanborrowedLiabiltitiesInfo, ...creditcardLiabiltitiesInfo],
+                    totalCashAssetAmount, totalBankAssetAmount, totalLoanLentAssetAmount, totalLoanBorrowedLiabilityAmount, totalCreditcardLiabilityAmount
+                },
+                message: 'Data retreived successfully!'
+            },
+            error: null
+        });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         res.status(500).json({
