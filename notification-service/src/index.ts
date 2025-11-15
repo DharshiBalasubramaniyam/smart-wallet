@@ -19,6 +19,14 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Routes
+app.use("/email", emailRouter);
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Notification service server is listening on port ${PORT}`);
+});
+
 // Connect to database
 // connectDatabase()
 //     .then(() => {
