@@ -11,7 +11,6 @@ export interface IEmailHistory extends Document {
    to: string;
    subject: string;
    text: string,
-   datetime: Schema.Types.Date,
    type: EmailNotificationType,
 }
 
@@ -24,7 +23,6 @@ const EmailHistorySchema: Schema = new Schema({
    to: { type: String },
    subject: { type: String },
    text: { type: String },
-   datetime: { type: Schema.Types.Date},
 }, {
    timestamps: true
 });

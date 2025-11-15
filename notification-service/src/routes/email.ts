@@ -12,7 +12,13 @@ emailRouter.post('/send/', async (req: Request, res: Response) => {
         const response = await sendEmail(mailReq.mailOptions);
 
         if (response) {
-            const emailHistory = await EmailHistory.create(mailReq);
+            const emailHistory = await EmailHistory.create({
+                userId: mailReq.userId,
+                to: mailReq.mailOptions.to,
+                subject: mailReq.mailOptions.subject,
+                text: mailReq.mailOptions.text,
+                type: mailReq.type,
+            });
 
             res.status(200).json({
                 success: true,

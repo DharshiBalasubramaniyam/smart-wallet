@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import emailRouter from "./routes/email";
-// import { connectDatabase } from './config/database';
+import { connectDatabase } from './config/database';
 import path from 'path';
 
 // Load environment variables
@@ -19,31 +19,23 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Routes
-app.use("/email", emailRouter);
-
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Notification service server is listening on port ${PORT}`);
-});
-
 // Connect to database
-// connectDatabase()
-//     .then(() => {
-//         // Routes
-//         app.use("/email", emailRouter);
+connectDatabase()
+    .then(() => {
+        // Routes
+        app.use("/email", emailRouter);
 
-//         // Cron jobs
+        // Cron jobs
 
-//         // Start the server
-//         app.listen(PORT, () => {
-//             console.log(`Notification service server is listening on port ${PORT}`);
-//         });
-//     })
-//     .catch((error) => {
-//         console.error('Failed to start Notification-service server:', error);
-//         process.exit(1);
-//     });
+        // Start the server
+        app.listen(PORT, () => {
+            console.log(`Notification service server is listening on port ${PORT}`);
+        });
+    })
+    .catch((error) => {
+        console.error('Failed to start Notification-service server:', error);
+        process.exit(1);
+    });
 
 // Handle unexpected errors
 process.on('unhandledRejection', (error) => {
