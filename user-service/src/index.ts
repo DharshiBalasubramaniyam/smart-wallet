@@ -10,7 +10,7 @@ import { connectDatabase } from './config/database';
 import path from 'path';
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config();
 const PORT = process.env.PORT || 8081;
 const app = express();
 

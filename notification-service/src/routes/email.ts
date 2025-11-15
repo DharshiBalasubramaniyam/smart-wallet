@@ -1,17 +1,19 @@
 import express, { Request, Response } from 'express';
 import { sendEmail } from '../services/email.service';
-import { MailOptions } from '../interfaces/requests';
+import { MailOptions, MailRequest } from '../interfaces/requests';
+import EmailHistory from '../models/email_history';
 
 const emailRouter = express.Router();
 
-emailRouter.post('/send', async (req: Request, res: Response) => {
+emailRouter.post('/send/', async (req: Request, res: Response) => {
     try {
-        // const userId: string = (req as any).user.id;
+        const mailReq: MailRequest = req.body
 
-        const mailOptions: MailOptions = req.body;
-        const response = await sendEmail(mailOptions);
+        const response = await sendEmail(mailReq.mailOptions);
 
         if (response) {
+            const emailHistory = await EmailHistory.create(mailReq);
+
             res.status(200).json({
                 success: true,
                 data: {

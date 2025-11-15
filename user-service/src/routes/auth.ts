@@ -5,7 +5,7 @@ import OTP from '../models/otp';
 import jwt from 'jsonwebtoken';
 import { CreateAccountRequest, VerifyOTPRequest, CreateSpaceRequest } from '../interfaces/requests';
 import { generateOTP } from '../utils/otp.util';
-import { sendOTPEmail } from '../services/email.service';
+import { sendRegisterOTPEmail } from '../services/email.service';
 import Plan, { PlanType } from '../models/plan';
 import Subscription, { SubscriptionStatus } from '../models/subscription';
 import { LoginStatus } from '../interfaces/responses';
@@ -298,7 +298,7 @@ authRouter.post('/resend-otp', async (req: Request, res: Response) => {
         }
 
         // Send OTP email
-        await sendOTPEmail(email, otpCode);
+        await sendRegisterOTPEmail(user._id, email, otpCode);
 
         const currentOTP = await OTP.findOne({ userId: user._id });
         console.log("current otp: ", currentOTP)

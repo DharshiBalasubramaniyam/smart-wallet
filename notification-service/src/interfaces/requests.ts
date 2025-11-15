@@ -3,3 +3,10 @@ export interface MailOptions {
     subject: string,
     text: string
 }
+
+export interface MailRequest extends Document {
+   userId: string;
+   mailOptions: MailOptions,
+   datetime: string,
+   type: string,
+}
