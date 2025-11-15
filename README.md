@@ -13,7 +13,7 @@
 git clone https://github.com/YOUR_USERNAME/smart-wallet.git
 ```
 
-3. Create a database and import the data in the [sample_data](./sample_data) folder.
+3. Create a MongoDB database (MongoDB Atlas) and import the data in the [sample_data](./sample_data) folder.
 
 4. Replace `YOUR_SECRET` placeholder in below `.env` files with your credentials.
     - [api-gateway/.env](api-gateway/.env)
