@@ -162,6 +162,8 @@ function Transactions() {
    const [allowedParentCategories, setAllowedParentCategories] = useState<any[]>([])
    const [allowedSubCategories, setAllowedSubCategories] = useState<CategoryInfo[]>([])
 
+   console.log("allowedSubCategories", allowedSubCategories)
+
    const onView = (transaction: any) => {
       const transactionInfo: TransactionInfo = {
          amount: transaction.amount.$numberDecimal,

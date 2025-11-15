@@ -1,10 +1,15 @@
 {
    "name": "smart-wallet",
    "scripts": {
+      "start-backend-old": "npm start --prefix backend",
+      "install-all-old": "npm install && npm install --prefix frontend && npm install --prefix backend",
       "start-frontend": "npm run dev --prefix frontend",
-      "start-backend": "npm start --prefix backend",
+      "start-api-gateway": "npm start --prefix api-gateway",
+      "start-finops-service": "npm start --prefix finops-service",
+      "start-user-service": "npm start --prefix user-service",
+      "start-backend": "concurrently \"npm run start-api-gateway\" \"npm run start-user-service\" \"npm run start-finops-service\"",
       "start": "concurrently \"npm run start-frontend\" \"npm run start-backend\"",
-      "install-all": "npm install && npm install --prefix frontend && npm install --prefix backend"
+      "install-all": "npm install && npm install --prefix frontend && npm install --prefix api-gateway && npm install --prefix user-service && npm install --prefix finops-service"
    },
    "dependencies": {
       "concurrently": "^9.1.2"

@@ -428,7 +428,7 @@ authRouter.post("/google", async (req: Request, res: Response) => {
         httpOnly: true,
         secure: false, // TODO: Use true in production with HTTPS
         sameSite: 'strict',
-        path: '/auth/',
+        path: '/user/auth/',
     });
 
     const spaces = await Space.find({ownerId: existingUser._id})
@@ -523,7 +523,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
                 httpOnly: true,
                 secure: false, // TODO: Use true in production with HTTPS
                 sameSite: 'strict',
-                path: '/auth/',
+                path: '/user/auth/',
             });
 
             const spaces = await Space.find({ownerId: user._id})

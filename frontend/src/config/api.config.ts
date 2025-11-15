@@ -15,6 +15,7 @@ export const API_CONFIG = {
 export const api = axios.create(API_CONFIG);
 
 export const INTERNAL_SERVER_ERROR = "Internal server error!"
+
 api.interceptors.response.use(
     response => response,
     async (error) => {
@@ -43,7 +44,7 @@ export const refreshAccessToken = async () => {
     const dispatch = store.dispatch;
     try {
         console.log(">>>> Requesting refresh token")
-        const response = await api.post(`auth/refresh_token`, {}, { withCredentials: true }); // Send refresh token via cookie
+        const response = await api.post(`user/auth/refresh_token`, {}, { withCredentials: true });
         if (response.data.success) {
             const spacesInfo = response.data.data.object.spaces
             const spaces: {id: string, name: string, type: String}[] = []
@@ -72,8 +73,8 @@ export const refreshAccessToken = async () => {
         console.log(">>> Refresh token pass")
     } catch (error) {
         console.log(">>> Refresh token expired. navigate to login: ", error)
-        dispatch(logout());
-        window.location.href = '/login'; 
+        // dispatch(logout());
+        // window.location.href = '/login'; 
         toast.info("Your session has expired. Please login.")
     }
 };

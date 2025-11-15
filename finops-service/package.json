@@ -1,5 +1,5 @@
 {
-    "name": "smart-wallet-backend",
+    "name": "smart-wallet-finops-service",
     "version": "1.0.0",
     "main": "dist/index.js",
     "scripts": {
