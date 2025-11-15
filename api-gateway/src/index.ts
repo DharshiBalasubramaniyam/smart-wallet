@@ -27,6 +27,12 @@ app.use('/finops', createProxyMiddleware({
    pathRewrite: {'^/finops': ''}
 }))
 
+app.use('/notification', createProxyMiddleware({
+   target: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:8083",
+   changeOrigin: true,
+   pathRewrite: {'^/notification': ''}
+}))
+
 app.listen(port, () => {
    console.log("Api gateway running in port " + port)
 })
