@@ -37,4 +37,4 @@ npm run start-backend
 npm run start-frontend
 ```
 
-8. Visit [http://localhost:5173/](http://localhost:5173/) in teh browser.
+8. Visit [http://localhost:5173/](http://localhost:5173/) in the browser.
