@@ -93,6 +93,7 @@ export interface TransactionInfo {
     scategory: string|null,
     pcategory: string|null,
     scheduleId?:string|null
+    spaceId?: string|undefined
 }
 
 export enum Frequency {
@@ -133,7 +134,8 @@ export interface ScheduleInfo {
     recurringApproval: string
     continue: ContinueType,
     endDate: string|null,
-    isClosed?: boolean
+    isClosed?: boolean,
+    spaceId?: string
 }
 
 interface SubCategoryInfo {
@@ -144,7 +146,9 @@ interface SubCategoryInfo {
 
 export interface CategoryInfo {
   _id: string,
+  parentCategoryId: string;
   parentCategory: string;
-  subCategories: SubCategoryInfo[];
-  color: string,
+  subCategoryId: string;
+  subCategoryName: string;
+  transactionTypes: string[],
 }

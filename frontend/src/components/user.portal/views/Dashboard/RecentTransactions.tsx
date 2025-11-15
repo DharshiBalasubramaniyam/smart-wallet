@@ -5,6 +5,7 @@ import { CategoryService } from "../../../../services/category.service";
 import { CategoryInfo } from "../../../../interfaces/modals";
 import { useNavigate, useParams } from "react-router-dom";
 import TransactionList from "../Transactions/TransactionList";
+import { toStrdSpaceType } from "../../../../utils/utils";
 
 function RecentTransactions({loanSummary}: {loanSummary: any}) {
 
@@ -15,7 +16,7 @@ function RecentTransactions({loanSummary}: {loanSummary: any}) {
 
     useEffect(() => {
         const fetchCategories = () => {
-         getCategories()
+         getCategories(toStrdSpaceType(spacetype))
             .then((res) => setCategories(res))
             .catch((err) => setCategories([]))
       }

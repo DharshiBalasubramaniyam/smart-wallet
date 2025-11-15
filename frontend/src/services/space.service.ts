@@ -14,7 +14,7 @@ export function SpaceService() {
 
     async function createSpace(body: SpaceInfo): Promise<void> {
         try {
-            const response = await api.post(`space/`, body, {
+            const response = await api.post(`user/space/`, body, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -35,7 +35,7 @@ export function SpaceService() {
 
     async function editSpace(id: string, body: SpaceInfo): Promise<void> {
         try {
-            const response = await api.put(`space/${id}`, body, {
+            const response = await api.put(`user/space/${id}`, body, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -57,7 +57,7 @@ export function SpaceService() {
 
     async function deleteSpace(id: string): Promise<void> {
         try {
-            const response = await api.delete(`space/${id}`, {
+            const response = await api.delete(`user/space/${id}`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -65,7 +65,7 @@ export function SpaceService() {
             console.log(response)
             if (response.data.success) {
                 const spaces: {id: string, name: string, type: SpaceType}[] = []
-                response.data.data.object.forEach((s: any) => {
+                response.data?.object?.forEach((s: any) => {
                     spaces.push({id: s._id, name: s.name, type: s.type})
                 })
                 dispatch(setSpaces({ spaces: spaces }))
@@ -79,7 +79,7 @@ export function SpaceService() {
 
     async function getSpacesByUser(): Promise<void> {
         try {
-            const response = await api.get(`space/user`, {
+            const response = await api.get(`user/space/user`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }

@@ -11,7 +11,7 @@ export function ScheduleService() {
     async function createSchedule(body: ScheduleInfo): Promise<any> {
         try {
             console.log(body)
-            const response = await api.post(`schedule/`, body, {
+            const response = await api.post(`finops/schedule/`, body, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -27,7 +27,8 @@ export function ScheduleService() {
 
     async function confirmSchedule(id: string): Promise<any> {
         try {
-            const response = await api.put(`schedule/confirm/${id}`, {
+            console.log(token)
+            const response = await api.put(`finops/schedule/confirm/${id}`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -43,7 +44,7 @@ export function ScheduleService() {
 
     async function skipSchedule(id: string): Promise<any> {
         try {
-            const response = await api.put(`schedule/skip/${id}`, {
+            const response = await api.put(`finops/schedule/skip/${id}`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -60,7 +61,7 @@ export function ScheduleService() {
     async function editSchedule(id: string, body: ScheduleInfo): Promise<any> {
         try {
             console.log(body)
-            const response = await api.put(`schedule/${id}`, body, {
+            const response = await api.put(`finops/schedule/${id}`, body, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -77,7 +78,7 @@ export function ScheduleService() {
 
     async function deleteSchedule(id: string): Promise<any> {
         try {
-            const response = await api.delete(`schedule/${id}`, {
+            const response = await api.delete(`finops/schedule/${id}`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -93,7 +94,7 @@ export function ScheduleService() {
 
     async function getSchedulesByUser(spaceid: string, limit: number, skip: number): Promise<any> {
         try {
-            const response = await api.get(`schedule/user/${spaceid}/${limit}/${skip}`, {
+            const response = await api.get(`finops/schedule/user/${spaceid}/${limit}/${skip}`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }

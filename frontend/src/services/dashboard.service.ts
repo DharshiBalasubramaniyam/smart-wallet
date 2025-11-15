@@ -12,7 +12,7 @@ export function DashboardService() {
         try {
             let response = null
             if (spacetype == SpaceType.CASH || spacetype === SpaceType.BANK) {
-                response = await api.get(`dashboard/cash/${spaceid}/${from}/${to}`, {
+                response = await api.get(`finops/dashboard/cash/${spaceid}/${from}/${to}`, {
                     headers: {
                         "authorization": `Bearer ${token}`
                     }
@@ -32,7 +32,7 @@ export function DashboardService() {
     async function getOtherSpaceSummary(spacetype: string, spaceid: string): Promise<any> {
         try {
             let response = null
-            response = await api.get(`dashboard/${spacetype}/${spaceid}`, {
+            response = await api.get(`finops/dashboard/${spacetype}/${spaceid}`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -48,7 +48,26 @@ export function DashboardService() {
         }
     }
 
-    return { getCashBankSummary, getOtherSpaceSummary };
+    async function getAllSpaceSummary(): Promise<any> {
+        try {
+            let response = null
+            response = await api.get(`finops/dashboard/all`, {
+                headers: {
+                    "authorization": `Bearer ${token}`
+                }
+            });
+            console.log("dash", response?.data)
+            if (response?.data.success) {
+                return response?.data.data.object
+            }
+            return []
+        } catch (error) {
+            processError(error)
+            return []
+        }
+    }
+
+    return { getCashBankSummary, getOtherSpaceSummary, getAllSpaceSummary };
 }
 
 function processError(error: unknown): void {

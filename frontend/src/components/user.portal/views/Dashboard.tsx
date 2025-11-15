@@ -15,6 +15,9 @@ import { SpendingSummaryFilterOptions } from "./Dashboard/SpendingSummary"
 import CashFlowTrend from "./Dashboard/CashFlowTrend";
 import DropDown from "../../../components/Dropdown";
 import { SpaceService } from "../../../services/space.service";
+import NetWorthSummary from "./Dashboard/NetWorthSummary";
+import AssetsSummary from "./Dashboard/AssetsSummary";
+import AllSpaceSummary from "./Dashboard/AllSpaceSummary";
 
 enum SpaceAction {
    EDIT_DETAILS = "EDIT_DETAILS",
@@ -24,10 +27,10 @@ enum SpaceAction {
 function DashBoard() {
    const { currency, spaces } = useSelector((state: RootState) => state.auth)
    const { spaceid, spacetype, view } = useParams();
-   const { getCashBankSummary, getOtherSpaceSummary } = DashboardService();
+   const { getCashBankSummary, getOtherSpaceSummary, getAllSpaceSummary } = DashboardService();
    const [totalIncome, settotalIncome] = useState(0.0)
    const [totalExpense, settotalExpense] = useState(0.0)
-   const [summary, setsummary] = useState({})
+   const [summary, setsummary] = useState(null)
    const [loading, setLoading] = useState(false);
    const standardSpaceType = toStrdSpaceType(spacetype || "") as SpaceType;
 
@@ -61,7 +64,7 @@ function DashBoard() {
          .catch(err => {
             settotalIncome(0)
             settotalExpense(0)
-            setsummary({})
+            setsummary(null)
          })
          .finally(() => {
             setLoading(false)
@@ -75,7 +78,21 @@ function DashBoard() {
             setsummary(res)
          })
          .catch(err => {
-            setsummary({})
+            setsummary(null)
+         })
+         .finally(() => {
+            setLoading(false)
+         })
+   }
+
+   const getAllSpaceData = async () => {
+      setLoading(true)
+      await getAllSpaceSummary()
+         .then(res => {
+            setsummary(res)
+         })
+         .catch(err => {
+            setsummary(null)
          })
          .finally(() => {
             setLoading(false)
@@ -83,7 +100,10 @@ function DashBoard() {
    }
 
    useEffect(() => {
-      if (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) {
+      if (spacetype === "all") {
+         getAllSpaceData()
+      }
+      else if (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) {
          getCashBankData(startDate, endDate)
       } else {
          getOtherSpaceData()
@@ -148,20 +168,30 @@ function DashBoard() {
    }, [selectedAction])
 
    return (
-      loading ? <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Loading...</h1> : (
+      loading || !summary ? <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Loading...</h1> : (
          <>
             {/* sub header */}
             <div className="flex justify-between items-center">
                <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Dashboard</h1>
                <div className="flex justify-end gap-3 items-center">
-                  <DropDown
-                     title="ACTIONS"
-                     dropdownItems={Object.values(SpaceAction).map(action => action.split("_").join(" ")).slice(0, Object.values(SpaceAction).length - 1)}
-                     lastItem={SpaceAction.DELETE_SPACE.split("_").join(" ")}
-                     onClick={(text) => setSelectedAction(text)}
-                  />
+                  {
+                     spacetype != "all" && (
+                        <DropDown
+                           title="ACTIONS"
+                           dropdownItems={Object.values(SpaceAction).map(action => action.split("_").join(" ")).slice(0, Object.values(SpaceAction).length - 1)}
+                           lastItem={SpaceAction.DELETE_SPACE.split("_").join(" ")}
+                           onClick={(text) => setSelectedAction(text)}
+                        />
+                     )
+                  }
                </div>
             </div>
+
+            {
+               (spacetype === "all") && (
+                  <AllSpaceSummary currency={currency || ""} summary={summary}/>
+               )
+            }
 
             {
                (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) && (

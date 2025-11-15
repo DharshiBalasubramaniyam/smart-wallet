@@ -43,3 +43,7 @@ export function toLocalSpaceType(str: string): string {
   return str.toLowerCase().split("_").join("-");
 }
 
+export function generateRandomColor() {
+  return `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
+}
+

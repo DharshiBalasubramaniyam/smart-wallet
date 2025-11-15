@@ -15,7 +15,7 @@ export function AuthService() {
 
     async function register(body: RegistrationInfo): Promise<void> {
         try {
-            const response = await api.post(`auth/register`, body);
+            const response = await api.post(`user/auth/register`, body);
             console.log(response.data)
             if (response.data.success) {
                 dispatch(setEmail({ email: response.data.data.object.email }))
@@ -28,7 +28,7 @@ export function AuthService() {
 
     async function sendOTP(body: SendOtpRequest): Promise<void> {
         try {
-            const response = await api.post(`auth/resend-otp`, body);
+            const response = await api.post(`user/auth/resend-otp`, body);
             console.log(response.data)
             if (response.data.success) {
                 dispatch(setOTPAttemptsRemaining({ OTPAttemptsRemaining: response.data.data.object.attemptsRemaining }))
@@ -42,7 +42,7 @@ export function AuthService() {
 
     async function verifyOTP(body: verifyOtpRequest, navigateTo: string): Promise<void> {
         try {
-            const response = await api.post(`auth/verify-otp`, body);
+            const response = await api.post(`user/auth/verify-otp`, body);
             console.log(response.data)
             if (response.data.success) {
                 dispatch(setOTPAttemptsRemaining({ OTPAttemptsRemaining: 3 }))
@@ -55,7 +55,7 @@ export function AuthService() {
 
     async function getAllPlans(): Promise<PlanInfo[]> {
         try {
-            const response = await api.get(`plan/all`);
+            const response = await api.get(`user/plan/all`);
             console.log(response.data)
             if (response.data.success) {
                 return response.data.data.object as PlanInfo[];
@@ -70,7 +70,7 @@ export function AuthService() {
     async function protectedRoute(): Promise<void> {
         try {
             console.log("sending protected route request")
-            const response = await api.get(`auth/protected`, {
+            const response = await api.get(`user/auth/protected`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -87,7 +87,7 @@ export function AuthService() {
 
     async function subscribePlan(body: SubscribeRequest, planName: string): Promise<void> {
         try {
-            const response = await api.post(`auth/subscriptions/subscribe`, body);
+            const response = await api.post(`user/auth/subscriptions/subscribe`, body);
             console.log(response.data)
             if (response.data.success) {
                 if (planName === PlanType.STARTER) {
@@ -103,7 +103,7 @@ export function AuthService() {
 
     async function updateCurrency(body: UpdateCurrencyRequest, navigateTo: string): Promise<void> {
         try {
-            const response = await api.patch(`auth/update-currency`, body);
+            const response = await api.patch(`user/auth/update-currency`, body);
             console.log(response.data)
             if (response.data.success) {
                 toast.success("Currency updated successfully!");
@@ -116,7 +116,7 @@ export function AuthService() {
 
     async function login(body: LoginInfo) {
         try {
-            const response = await api.post(`auth/login`, body, { withCredentials: true });
+            const response = await api.post(`user/auth/login`, body, { withCredentials: true });
             console.log(response.data)
             if (response.data.success) {
                 const spacesInfo: any[] = response.data.data.object.spaces
@@ -165,7 +165,7 @@ export function AuthService() {
 
     async function loginWithGoogle(body: {token: string, currency: string}) {
         try {
-            const response = await api.post(`auth/google`, body, { withCredentials: true });
+            const response = await api.post(`user/auth/google`, body, { withCredentials: true });
             console.log(response.data)
             if (response.data.success) {
                 const spacesInfo: any = response.data.data.object.spaces
@@ -213,7 +213,7 @@ export function AuthService() {
 
     const logOut = async () => {
         try {
-            const response = await api.post(`auth/logout`, {}, { withCredentials: true }); // Send refresh token via cookie
+            const response = await api.post(`user/auth/logout`, {}, { withCredentials: true }); // Send refresh token via cookie
             dispatch(logout());
         } catch (error) {
             console.log(error)

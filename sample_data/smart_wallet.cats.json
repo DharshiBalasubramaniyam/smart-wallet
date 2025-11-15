@@ -1,0 +1,612 @@
+[{
+  "_id": {
+    "$oid": "68c8d8d5dfe13cdc534c9f09"
+  },
+  "parentCategory": "Loan Lent",
+  "subCategories": [
+    {
+      "name": "Loan Principal",
+      "color": "#6b32a8",
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f0a"
+      },
+      "transactionTypes": [
+        "LOAN_PRINCIPAL"
+      ]
+    },
+    {
+      "name": "Interest",
+      "color": "#32a89c",
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f0b"
+      },
+      "transactionTypes": [
+        "REPAYMENT_RECEIVED"
+      ]
+    },
+    {
+      "name": "Principal Repayment",
+      "color": "#a86532",
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f0c"
+      },
+      "transactionTypes": [
+        "REPAYMENT_RECEIVED"
+      ]
+    },
+    {
+      "name": "Penalty",
+      "color": "#d53434",
+      "transactionTypes": [
+        "LOAN_CHARGES"
+      ],
+      "_id": {
+        "$oid": "68d11f431a0c731b1d4a55bc"
+      }
+    },
+    {
+      "name": "Fee",
+      "color": "#9392e8",
+      "transactionTypes": [
+        "LOAN_CHARGES"
+      ],
+      "_id": {
+        "$oid": "68d11f7b1a0c731b1d4a55c3"
+      }
+    }
+  ],
+  "spaces": [
+    "LOAN_LENT"
+  ],
+  "color": "#6b32a8",
+  "updatedAt": {
+    "$date": "2025-09-22T10:05:47.816Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68ced0da589f8fd2459ec2dd"
+  },
+  "parentCategory": "Loan Borrowed",
+  "subCategories": [
+    {
+      "name": "Loan Principal",
+      "color": "#6b32a8",
+      "transactionTypes": [
+        "LOAN_PRINCIPAL"
+      ],
+      "_id": {
+        "$oid": "68cf78442dea277e9f3843e6"
+      }
+    },
+    {
+      "name": "Interest",
+      "color": "#32a89c",
+      "transactionTypes": [
+        "REPAYMENT_PAID"
+      ],
+      "_id": {
+        "$oid": "68cf78512dea277e9f3843e7"
+      }
+    },
+    {
+      "name": "Principal Repayment",
+      "color": "#a86532",
+      "transactionTypes": [
+        "REPAYMENT_PAID"
+      ],
+      "_id": {
+        "$oid": "68cf785f2dea277e9f3843e8"
+      }
+    },
+    {
+      "name": "Fee",
+      "color": "#e1989d",
+      "transactionTypes": [
+        "LOAN_CHARGES"
+      ],
+      "_id": {
+        "$oid": "68d121681a0c731b1d4a55d5"
+      }
+    },
+    {
+      "name": "Penalty",
+      "color": "#d199e5",
+      "transactionTypes": [
+        "LOAN_CHARGES"
+      ],
+      "_id": {
+        "$oid": "68d1217c1a0c731b1d4a55dc"
+      }
+    }
+  ],
+  "color": "#0349fc",
+  "spaces": [
+    "LOAN_BORROWED"
+  ],
+  "updatedAt": {
+    "$date": "2025-09-22T10:14:20.114Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68ced0da589f8fd2459ec2de"
+  },
+  "parentCategory": "Credit Card",
+  "subCategories": [
+    {
+      "name": "Bill Payment",
+      "color": "#32a89c",
+      "transactionTypes": [
+        "BALANCE_DECREASE"
+      ],
+      "_id": {
+        "$oid": "68cf73e92dea277e9f3843e3"
+      }
+    },
+    {
+      "name": "Refund",
+      "color": "#FF5733",
+      "transactionTypes": [
+        "BALANCE_DECREASE"
+      ],
+      "_id": {
+        "$oid": "68cf74242dea277e9f3843e5"
+      }
+    }
+  ],
+  "color": "#a8326d",
+  "spaces": [
+    "CREDIT_CARD"
+  ]
+},
+{
+  "_id": {
+    "$oid": "68c8d8d5dfe13cdc534c9efe"
+  },
+  "parentCategory": "Miscellaneous",
+  "subCategories": [
+    {
+      "name": "fee & charge",
+      "color": "#FF9800",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9eff"
+      }
+    },
+    {
+      "name": "tax",
+      "color": "#E91E63",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f00"
+      }
+    },
+    {
+      "name": "bills",
+      "color": "#03A9F4",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f01"
+      }
+    },
+    {
+      "name": "interest",
+      "color": "#4CAF50",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f02"
+      }
+    },
+    {
+      "name": "donations",
+      "color": "#9C27B0",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f03"
+      }
+    },
+    {
+      "name": "fines & penalties",
+      "color": "#F44336",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f04"
+      }
+    },
+    {
+      "name": "subscriptions",
+      "color": "#00BCD4",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f05"
+      }
+    },
+    {
+      "name": "gifts",
+      "color": "#FFC107",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f06"
+      }
+    },
+    {
+      "name": "transfer",
+      "color": "#8BC34A",
+      "transactionTypes": [
+        "INTERNAL_TRANSFER"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f08"
+      }
+    }
+  ],
+  "spaces": [
+    "CASH",
+    "BANK",
+    "CREDIT_CARD"
+  ],
+  "color": "#FF9800"
+},
+{
+  "_id": {
+    "$oid": "68c8d8d5dfe13cdc534c9f0d"
+  },
+  "parentCategory": "Food & Drinks",
+  "subCategories": [
+    {
+      "name": "Groceries",
+      "color": "#FF5733",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f0e"
+      }
+    },
+    {
+      "name": "Restaurants",
+      "color": "#33FF57",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f0f"
+      }
+    },
+    {
+      "name": "Coffee & Tea",
+      "color": "#3357FF",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f10"
+      }
+    }
+  ],
+  "color": "#FF5733",
+  "spaces": [
+    "CASH",
+    "BANK",
+    "CREDIT_CARD"
+  ]
+},
+{
+  "_id": {
+    "$oid": "68c8d8d5dfe13cdc534c9f11"
+  },
+  "parentCategory": "Shopping",
+  "subCategories": [
+    {
+      "name": "Clothing",
+      "color": "#FF33A8",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f12"
+      }
+    },
+    {
+      "name": "Electronics",
+      "color": "#33FFF6",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f13"
+      }
+    },
+    {
+      "name": "Accessories",
+      "color": "#F6FF33",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f14"
+      }
+    }
+  ],
+  "color": "#FF33A8",
+  "spaces": [
+    "CASH",
+    "BANK",
+    "CREDIT_CARD"
+  ]
+},
+{
+  "_id": {
+    "$oid": "68c8d8d5dfe13cdc534c9f15"
+  },
+  "parentCategory": "Housing",
+  "subCategories": [
+    {
+      "name": "Rent",
+      "color": "#8E44AD",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f16"
+      }
+    },
+    {
+      "name": "Utilities",
+      "color": "#3498DB",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f17"
+      }
+    },
+    {
+      "name": "Maintenance",
+      "color": "#E67E22",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f18"
+      }
+    }
+  ],
+  "color": "#8E44AD",
+  "spaces": [
+    "CASH",
+    "BANK",
+    "CREDIT_CARD"
+  ],
+  "updatedAt": {
+    "$date": "2025-11-15T05:35:46.674Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c8d8d5dfe13cdc534c9f19"
+  },
+  "parentCategory": "Transport",
+  "subCategories": [
+    {
+      "name": "Public Transport",
+      "color": "#2ECC71",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f2a"
+      }
+    },
+    {
+      "name": "Fuel",
+      "color": "#E74C3C",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f2b"
+      }
+    },
+    {
+      "name": "Taxi / Ride Share",
+      "color": "#F1C40F",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f2c"
+      }
+    }
+  ],
+  "color": "#2ECC71",
+  "spaces": [
+    "CASH",
+    "BANK",
+    "CREDIT_CARD"
+  ]
+},
+{
+  "_id": {
+    "$oid": "68c8d8d5dfe13cdc534c9f21"
+  },
+  "parentCategory": "Entertainment",
+  "subCategories": [
+    {
+      "name": "Movies",
+      "color": "#FF8C00",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f22"
+      }
+    },
+    {
+      "name": "Concerts",
+      "color": "#FF1493",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f23"
+      }
+    },
+    {
+      "name": "Games",
+      "color": "#00CED1",
+      "transactionTypes": [
+        "EXPENSE",
+        "BALANCE_INCREASE"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f24"
+      }
+    }
+  ],
+  "color": "#FF8C00",
+  "spaces": [
+    "CASH",
+    "BANK",
+    "CREDIT_CARD"
+  ],
+  "updatedAt": {
+    "$date": "2025-09-22T10:01:16.024Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c8d8d5dfe13cdc534c9f1d"
+  },
+  "parentCategory": "Income",
+  "subCategories": [
+    {
+      "name": "Salary",
+      "color": "#1ABC9C",
+      "transactionTypes": [
+        "INCOME"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f1a"
+      }
+    },
+    {
+      "name": "Gifts",
+      "color": "#eb34ab",
+      "transactionTypes": [
+        "INCOME"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f1b"
+      }
+    },
+    {
+      "name": "Interests",
+      "color": "#eb3462",
+      "transactionTypes": [
+        "INCOME"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f1c"
+      }
+    },
+    {
+      "name": "Refunds",
+      "color": "#510763",
+      "transactionTypes": [
+        "INCOME"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f1d"
+      }
+    },
+    {
+      "name": "Rental Income",
+      "color": "#076360",
+      "transactionTypes": [
+        "INCOME"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f1e"
+      }
+    },
+    {
+      "name": "Sale",
+      "color": "#576307",
+      "transactionTypes": [
+        "INCOME"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f1f"
+      }
+    },
+    {
+      "name": "Freelance",
+      "color": "#9B59B6",
+      "transactionTypes": [
+        "INCOME"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f11"
+      }
+    },
+    {
+      "name": "Investments",
+      "color": "#34495E",
+      "transactionTypes": [
+        "INCOME"
+      ],
+      "_id": {
+        "$oid": "68c8d8d5dfe13cdc534c9f20"
+      }
+    }
+  ],
+  "color": "#1ABC9C",
+  "spaces": [
+    "CASH",
+    "BANK"
+  ],
+  "updatedAt": {
+    "$date": "2025-09-21T14:36:22.290Z"
+  }
+}
+]

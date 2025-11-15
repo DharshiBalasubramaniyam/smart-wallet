@@ -2,7 +2,7 @@ import { capitalize, getFormattedDate, toStrdSpaceType } from "../../../../utils
 import { CategoryInfo, Repeat } from "../../../../interfaces/modals";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../../redux/store/store";
-import { FaArrowDown, FaArrowUp, FaCalendar, FaHandHoldingUsd, FaMoneyBillWave, FaRegClock, FaSyncAlt, FaTimes, FaUserClock } from "react-icons/fa";
+import { FaArrowDown, FaArrowUp, FaCalendar, FaHandHoldingUsd, FaLongArrowAltRight, FaMoneyBillWave, FaRegClock, FaSyncAlt, FaTimes, FaUserClock } from "react-icons/fa";
 import { FiAlertTriangle, FiCalendar, FiCheckCircle, FiClock, FiFlag, FiSunrise } from "react-icons/fi"
 import { RiPercentLine } from "react-icons/ri";
 import { TransactionType } from "../Transactions";
@@ -28,14 +28,7 @@ function ScheduleList({ schedules, categories, onClick, onConfirm, onSkip }: { s
                             <div className="flex justify-between">
                                 <span className="text-text-light-primary dark:text-text-dark-primary capitalize">
                                     {
-                                        (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) && schedule.pcategory &&
-                                        (categories.find(pc => pc._id === schedule.pcategory)?.parentCategory) + " - "
-                                    }
-                                    {
-                                        (standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK) && schedule.pcategory ?
-                                            (categories.find(pc => pc._id === schedule.pcategory)?.subCategories
-                                                .find(sc => sc._id === schedule.scategory)?.name) :
-                                            capitalize(schedule.type.split("_").join(" "))
+                                        (categories.find(pc => pc.subCategoryId === schedule.scategory)?.subCategoryName)
                                     }
                                 </span>
                                 <span className="text-text-light-primary dark:text-text-dark-primary">{currency}. {schedule.amount.$numberDecimal}</span>
@@ -47,30 +40,39 @@ function ScheduleList({ schedules, categories, onClick, onConfirm, onSkip }: { s
                                 <div className="flex gap-4">
                                     <span className="text-text-light-secondary dark:text-text-dark-secondary flex gap-2 items-center capitalize">
                                         {
-                                            standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK ? (
-                                                spaceid === schedule.from ? <FaArrowUp className="text-red-500" /> : <FaArrowDown className="text-green-500" />
-                                            ) : standardSpaceType === SpaceType.LOAN_BORROWED || standardSpaceType === SpaceType.LOAN_LENT ? (
-                                                schedule.type === TransactionType.LOAN_PRINCIPAL ?
-                                                    <FaMoneyBillWave className="text-yellow-500" /> :
-                                                    schedule.type === TransactionType.PRINCIPAL_REPAYMENT_PAID || schedule.type === TransactionType.PRINCIPAL_REPAYMENT_RECEIVED ?
-                                                        <FaHandHoldingUsd className="text-pink-500" /> :
-                                                        <RiPercentLine className="text-red-500" />
+                                            spacetype !== "all" && (
+                                                <span>
+                                                    {
+                                                        standardSpaceType === SpaceType.CASH || standardSpaceType === SpaceType.BANK ? (
+                                                            spaceid === schedule.from ? <FaArrowUp className="text-red-500" /> : <FaArrowDown className="text-green-500" />
+                                                        ) : standardSpaceType === SpaceType.LOAN_BORROWED || standardSpaceType === SpaceType.LOAN_LENT ? (
+                                                            schedule.type === TransactionType.LOAN_PRINCIPAL ?
+                                                                <FaMoneyBillWave className="text-yellow-500" /> :
+                                                                schedule.type === TransactionType.REPAYMENT_PAID ?
+                                                                    <FaArrowUp className="text-red-500" /> :
+                                                                    schedule.type === TransactionType.REPAYMENT_RECEIVED ?
+                                                                        <FaArrowDown className="text-green-500" /> :
+                                                                        <RiPercentLine className="text-red-500" />
+                                                        ) : standardSpaceType === SpaceType.CREDIT_CARD ? (
+                                                            schedule.type === TransactionType.BALANCE_INCREASE ?
+                                                                <FaArrowUp className="text-red-500" /> :
+                                                                schedule.type === TransactionType.BALANCE_DECREASE ?
+                                                                    <FaArrowDown className="text-green-500" /> :
+                                                                    <RiPercentLine className="text-red-500" />
 
-                                            ) : standardSpaceType === SpaceType.CREDIT_CARD ? (
-                                                schedule.type === TransactionType.PURCHASE || schedule.type === TransactionType.INTEREST_CHARGED ?
-                                                    <FaArrowUp className="text-red-500" /> :
-                                                    schedule.type === TransactionType.BILL_PAYMENT || schedule.type === TransactionType.REFUND ?
-                                                        <FaArrowDown className="text-green-500" /> :
-                                                        <RiPercentLine className="text-red-500" />
-
-                                            ) : (
-                                                <FaMoneyBillWave className="text-purple-500" />
+                                                        ) : (
+                                                            <FaMoneyBillWave className="text-purple-500" />
+                                                        )
+                                                    }
+                                                </span>
                                             )
                                         }
                                         {
                                             spaceid === schedule.from ?
                                                 `${spaces.find(s => s.id == schedule.to)?.name || "Outside wallet"}` :
-                                                `${spaces.find(s => s.id == schedule.from)?.name || "Outside wallet"}`
+                                                spaceid === schedule.to ?
+                                                    `${spaces.find(s => s.id == schedule.from)?.name || "Outside wallet"}` :
+                                                    <>{`${spaces.find(s => s.id == schedule.from)?.name || "Outside wallet"}`} <FaLongArrowAltRight /> {`${spaces.find(s => s.id == schedule.to)?.name || "Outside wallet"}`}</>
                                         }
                                     </span>
                                     <span className="text-text-light-secondary dark:text-text-dark-secondary flex gap-2 items-center capitalize">

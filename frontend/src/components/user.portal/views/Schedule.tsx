@@ -1,14 +1,14 @@
 import Button from "../../Button";
 import Input from "../../Input";
 import { useEffect, useState } from 'react';
-import { CategoryInfo, ContinueType, Frequency, RecurringApproval, Repeat, ScheduleInfo, TransactionInfo } from "../../../interfaces/modals"
+import { CategoryInfo, ContinueType, Frequency, RecurringApproval, Repeat, ScheduleInfo } from "../../../interfaces/modals"
 import { toast } from 'react-toastify';
 import { toStrdSpaceType } from "../../../utils/utils";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../redux/store/store";
 import { CategoryService } from "../../../services/category.service";
-import { FaEdit, FaInfoCircle, FaTimes, FaTrash } from "react-icons/fa"
+import { FaEdit, FaTimes, FaTrash } from "react-icons/fa"
 import { TransactionType, transactionTypesInfo } from "./Transactions";
 import { ScheduleService } from "../../../services/schedule.service";
 import ScheduleList from "./Schedules/ScheduleList";
@@ -16,6 +16,8 @@ import ScheduleList from "./Schedules/ScheduleList";
 function Schedule() {
 
    const { spacetype, spaceid } = useParams()
+   const [activeSpaceId, setActiveSpaceId] = useState<string | undefined>(spaceid)
+   const [activeSpaceType, setActiveSpaceType] = useState<string | undefined>(spacetype)
    const { spaces } = useSelector((state: RootState) => state.auth)
    const [inputs, setInputs] = useState<ScheduleInfo>({
       type: "",
@@ -37,20 +39,23 @@ function Schedule() {
    const [newOrEditMode, setNewMode] = useState<boolean>(false)
    const [viewMode, setViewMode] = useState<boolean>(false)
    const [editId, setEditId] = useState<string | null>(null)
-   const [canEditSchedule, setCanEditSchedule] = useState<boolean>(false)
    const [schedules, setSchedules] = useState<any[]>([])
    const [total, setTotal] = useState<any>(0)
    const [categories, setCategories] = useState<CategoryInfo[]>([])
    const [page, setPage] = useState<number>(1);
    const [loading, setLoading] = useState<boolean>(false)
-   const spaceInfo = transactionTypesInfo.find(info => toStrdSpaceType(spacetype) === info.spaceType) || null
-   // const { createTransaction, editTransaction, deleteTransaction, getTransactionsByUser } = TransactionService();
+   const spaceInfo = transactionTypesInfo.find(info => toStrdSpaceType(activeSpaceType) === info.spaceType) || null
    const { createSchedule, deleteSchedule, editSchedule, getSchedulesByUser, confirmSchedule, skipSchedule } = ScheduleService();
    const { getCategories } = CategoryService();
    const pageLimit = 10;
 
+   const [allowedParentCategories, setAllowedParentCategories] = useState<any[]>([])
+   const [allowedSubCategories, setAllowedSubCategories] = useState<CategoryInfo[]>([])
+
+   console.log(categories)
+
    const onView = (schedule: any) => {
-      const info: ScheduleInfo = {
+      const scheduleInfo: ScheduleInfo = {
          amount: schedule.amount.$numberDecimal,
          startDate: schedule.nextDueDate?.split("T")[0] || schedule.startDate?.split("T")[0],
          from: schedule.from,
@@ -65,12 +70,16 @@ function Schedule() {
          recurringApproval: schedule.isAutomated ? RecurringApproval.AUTO : RecurringApproval.MANUAL,
          continue: schedule.endDate ? ContinueType.UNTIL_A_DATE : ContinueType.FOREVER,
          endDate: schedule.endDate ? schedule.endDate.split("T")[0] : null,
-         isClosed: !schedule.isActive
+         isClosed: !schedule.isActive,
+         spaceId: schedule.spaceId
       }
-      console.log(schedule, info);
-      setInputs(info)
+      console.log(schedule, scheduleInfo);
+      setInputs(scheduleInfo)
       setEditId(schedule._id)
-      setCanEditSchedule(schedule.isActive)
+      const spaceType = spaces.find(space => space.id === scheduleInfo.spaceId)?.type
+      console.log(scheduleInfo.type, scheduleInfo.spaceId, spaceType)
+      setActiveSpaceType(spaceType);
+      setActiveSpaceId(scheduleInfo.spaceId)
       setViewMode(true)
    }
 
@@ -92,36 +101,18 @@ function Schedule() {
 
    const onNewOrEditSubmit = async () => {
       console.log(inputs)
+      if (!activeSpaceId) {
+         console.log("No space id found")
+         return;
+      }
+
       if (inputs.amount == 0.0) {
          toast.error("Amount is required!")
          return;
       }
 
-      let finalInputs = inputs;
+      let finalInputs = { ...inputs, spaceId: activeSpaceId };
 
-      if (inputs.type === TransactionType.PRINCIPAL_REPAYMENT_RECEIVED || inputs.type === TransactionType.PRINCIPAL_REPAYMENT_PAID) {
-         const pcategory = categories.find((cat) => cat.parentCategory === "loan");
-         const scategory = pcategory?.subCategories.find((cat) => cat.name === "repayment")
-         finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      }
-
-      else if (inputs.type === TransactionType.INTEREST_PAID || inputs.type === TransactionType.INTEREST_RECEIVED) {
-         const pcategory = categories.find((cat) => cat.parentCategory === "loan");
-         const scategory = pcategory?.subCategories.find((cat) => cat.name === "interest")
-         finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      }
-
-      else if (inputs.type === TransactionType.INTERNAL_TRANSFER) {
-         const pcategory = categories.find((cat) => cat.parentCategory === "Miscellaneous");
-         const scategory = pcategory?.subCategories.find((cat) => cat.name === "transfer")
-         finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      }
-
-      else if (inputs.type === TransactionType.BILL_PAYMENT) {
-         const pcategory = categories.find((cat) => cat.parentCategory === "Miscellaneous");
-         const scategory = pcategory?.subCategories.find((cat) => cat.name === "bills")
-         finalInputs = { ...inputs, pcategory: pcategory?._id || null, scategory: scategory?._id || null }
-      }
       console.log(finalInputs)
       setLoading(true)
       if (editId) {
@@ -208,35 +199,29 @@ function Schedule() {
    }
 
    useEffect(() => {
-      const fetchCategories = () => {
-         getCategories()
-            .then((res) => setCategories(res))
-            .catch((err) => setCategories([]))
-      }
-      fetchCategories();
-      setLoading(true)
-      getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
-         .then(res => {
-            setSchedules(res.schedules)
-            setTotal(res.total)
-         })
-         .catch(err => setSchedules([]))
-         .finally(() => {
-            setLoading(false);
-         });
-   }, [])
-
-   useEffect(() => {
+      if (inputs.type == "") return;
       if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("ACTIVE_SPACE")) {
          setInputs((prev: any) => {
-            return { ...prev, from: spaceid }
+            return { ...prev, from: activeSpaceId }
+         });
+      }
+
+      else if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("OUTSIDE_MYWALLET")) {
+         setInputs((prev: any) => {
+            return { ...prev, from: null }
          });
       }
 
       if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("ACTIVE_SPACE")) {
          console.log("sdsd")
          setInputs((prev: any) => {
-            return { ...prev, to: spaceid }
+            return { ...prev, to: activeSpaceId }
+         });
+      }
+
+      else if (spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("OUTSIDE_MYWALLET")) {
+         setInputs((prev: any) => {
+            return { ...prev, to: null }
          });
       }
 
@@ -245,10 +230,53 @@ function Schedule() {
             return { ...prev, pcategory: categories.find((c) => c.parentCategory === "Income")?._id }
          });
       }
+
+      const pcategories = categories
+         .filter(cat => cat.transactionTypes.includes(inputs.type))
+         .map(cat => ({
+            parentCategoryId: cat.parentCategoryId,
+            parentCategory: cat.parentCategory
+         }));
+      setAllowedParentCategories([
+         ...new Map(
+            pcategories.map(cat => [cat.parentCategoryId, cat])
+         ).values()
+      ])
+      if (pcategories.length === 1) {
+         setInputs((prev: any) => {
+            return { ...prev, pcategory: pcategories[0].parentCategoryId }
+         })
+      }
    }, [inputs.type])
 
    useEffect(() => {
+      if (!viewMode) {
+         setInputs({
+            type: "",
+            amount: 0.0,
+            from: null,
+            to: null,
+            note: "",
+            scategory: null,
+            pcategory: null,
+            frequency: "",
+            startDate: getTodayDate(),
+            repeat: Repeat.DAY,
+            interval: 1,
+            recurringApproval: RecurringApproval.AUTO,
+            continue: ContinueType.FOREVER,
+            endDate: null
+         })
+      }
+   }, [activeSpaceType])
+
+   useEffect(() => {
       setLoading(true)
+
+      getCategories(toStrdSpaceType(spacetype))
+         .then((res) => setCategories(res))
+         .catch((err) => setCategories([]))
+
       getSchedulesByUser(spaceid || "", pageLimit, (page - 1) * pageLimit)
          .then(res => {
             setSchedules(res.schedules)
@@ -259,6 +287,17 @@ function Schedule() {
             setLoading(false);
          });
    }, [page, spaceid])
+
+   useEffect(() => {
+      const scategories = categories
+         .filter(cat => cat.parentCategoryId === inputs.pcategory && cat.transactionTypes.includes(inputs.type))
+      if (scategories.length === 1) {
+         setInputs((prev: any) => {
+            return { ...prev, scategory: scategories[0].subCategoryId }
+         })
+      }
+      setAllowedSubCategories(scategories)
+   }, [inputs.pcategory])
 
    if (loading) return <h1 className="text-xl text-text-light-primary dark:text-text-dark-primary">Loading...</h1>
 
@@ -319,8 +358,38 @@ function Schedule() {
                         {editId ? "Edit Schedule" : "New Schedule"}
                      </div>
                      <form className="border-t border-b border-border-light-primary dark:border-border-dark-primary" onSubmit={onSubmit}>
+                        {/* space */}
+                        <div className={spacetype == "all" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary">Space:</label>
+                           <select
+                              className="w-full disabled:opacity-50 p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
+                              value={`${activeSpaceType}-${activeSpaceId}`}
+                              name="type"
+                              disabled={editId != null}
+                              onChange={(e) => {
+                                 const parts = e.target.value.split("-")
+                                 setActiveSpaceType(parts[0])
+                                 setActiveSpaceId(parts[1])
+                              }}
+                           >
+                              <option key={"all"} value={"all-all"} disabled>
+                                 Select Space
+                              </option>
+                              {
+                                 spaces.map((space) => {
+                                    return (
+                                       <option key={space.id} value={`${space.type}-${space.id}`}>
+                                          {space.name.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
+
+                           </select>
+                        </div>
+
                         {/* type */}
-                        <div className="my-3">
+                        <div className={activeSpaceType != "all" ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Type:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
@@ -357,8 +426,8 @@ function Schedule() {
 
                               {
                                  spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("ACTIVE_SPACE") ? (
-                                    <option value={spaceid}>
-                                       {spaces.find(s => s.id == spaceid)?.name.split("-").join(" ").toUpperCase()}
+                                    <option value={activeSpaceId}>
+                                       {spaces.find(s => s.id == activeSpaceId)?.name.split("-").join(" ").toUpperCase()}
                                     </option>
                                  )
                                     : spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.fromSpaces.includes("OUTSIDE_MYWALLET") ? (
@@ -400,8 +469,8 @@ function Schedule() {
 
                               {
                                  spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("ACTIVE_SPACE") ? (
-                                    <option value={spaceid}>
-                                       {spaces.find(s => s.id == spaceid)?.name.split("-").join(" ").toUpperCase()}
+                                    <option value={activeSpaceId}>
+                                       {spaces.find(s => s.id == activeSpaceId)?.name.split("-").join(" ").toUpperCase()}
                                     </option>
                                  )
                                     : spaceInfo?.transactionTypes.find(t => t.type === inputs.type)?.toSpaces.includes("OUTSIDE_MYWALLET") ? (
@@ -418,7 +487,7 @@ function Schedule() {
                               {
                                  spaces.filter((s) => {
                                     const transactionInfo = spaceInfo?.transactionTypes.find(t => t.type === inputs.type)
-                                    return transactionInfo?.toSpaces.includes(s.type) && s.id != spaceid
+                                    return transactionInfo?.toSpaces.includes(s.type) && s.id != activeSpaceId
                                  }).map((s) => {
                                     return (
                                        <option value={s.id}>
@@ -431,52 +500,33 @@ function Schedule() {
                         </div>
 
                         {/* p category */}
-                        <div className={inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE ? `my-3` : `my-3 hidden`}>
-                           <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Category:</label>
+                        <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary">Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
                               value={inputs.pcategory || ""}
                               name={"pcategory"}
                               onChange={onInputChange}
-                              disabled={inputs.type === TransactionType.INCOME}
                            >
                               {
-                                 inputs.type === TransactionType.INCOME ? (
-                                    categories
-                                       .filter((c) => c.parentCategory === "Income")
-                                       .map((c) => {
-                                          return (
-                                             <option key={c._id} value={c._id}>
-                                                {c.parentCategory}
-                                             </option>
-                                          );
-                                       })
-                                 ) : (
-                                    <>
-                                       <option value={""}>Select category</option>
-                                       {
-                                          categories
-                                             .filter(
-                                                (c) =>
-                                                   c.parentCategory !== "Income" &&
-                                                   c.parentCategory !== "loan"
-                                             )
-                                             .map((c) => {
-                                                return (
-                                                   <option key={c._id} value={c._id}>
-                                                      {c.parentCategory}
-                                                   </option>
-                                                );
-                                             })
-                                       }
-                                    </>
+                                 allowedParentCategories.length > 1 && (
+                                    <option value="">Select category</option>
                                  )
+                              }
+                              {
+                                 allowedParentCategories.map(cat => {
+                                    return (
+                                       <option value={cat.parentCategoryId}>
+                                          {cat.parentCategory}
+                                       </option>
+                                    )
+                                 })
                               }
                            </select>
                         </div>
 
                         {/* sub category */}
-                        <div className={(inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE) && inputs.pcategory != null ? `my-3` : `my-3 hidden`}>
+                        <div className={inputs.type != "" && inputs.pcategory ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Sub Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
@@ -484,14 +534,16 @@ function Schedule() {
                               name="scategory"
                               onChange={onInputChange}
                            >
-                              <option value={""}>
-                                 Select sub category
-                              </option>
                               {
-                                 categories.find(cat => cat._id === inputs.pcategory)?.subCategories.map(c => {
+                                 allowedSubCategories.length > 1 && (
+                                    <option value="">Select category</option>
+                                 )
+                              }
+                              {
+                                 allowedSubCategories.map(cat => {
                                     return (
-                                       <option value={c._id}>
-                                          {c.name}
+                                       <option value={cat.subCategoryId}>
+                                          {cat.subCategoryName}
                                        </option>
                                     )
                                  })
@@ -582,7 +634,7 @@ function Schedule() {
                         </div>
 
                         {/* Recurring Approval */}
-                        <div className={inputs.type != ""  ? `my-3` : `my-3 hidden`}>
+                        <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Do you want to create schedules automatically for future schedules?:</label>
                            <div className="mt-2 flex gap-2 items-center justify-start">
                               <input
@@ -689,20 +741,13 @@ function Schedule() {
                      className="relative w-full max-w-lg rounded-lg bg-bg-light-secondary dark:bg-bg-dark-secondary shadow-sm p-3"
                   >
                      <div className="flex justify-between shrink-0 items-center pb-4 text-xl font-medium text-text-light-primary dark:text-text-dark-primary">
-                        View Transaction
+                        View Schedule
                         <div className="flex gap-2">
-                           {
-                              canEditSchedule && (
-                                 <>
-                                    <Button
-                                       text={<FaEdit />}
-                                       onClick={onNewOrEditMode}
-                                       className="max-w-fit pt-2 pb-2"
-                                    />
-
-                                 </>
-                              )
-                           }
+                           <Button
+                              text={<FaEdit />}
+                              onClick={onNewOrEditMode}
+                              className="max-w-fit pt-2 pb-2"
+                           />
                            <Button
                               text={<FaTrash />}
                               onClick={onDelete}
@@ -716,8 +761,31 @@ function Schedule() {
                         </div>
                      </div>
                      <form className="border-t border-border-light-primary dark:border-border-dark-primary" onSubmit={onSubmit}>
-                        {!canEditSchedule && <div className="w-full text-text-light-primary dark:text-text-dark-primary flex p-1 items-center border border-yellow-700 gap-3 rounded *:text-xs"> <FaInfoCircle /> This schedule is closed.</div>}
+                        {/* space */}
+                        <div className={spacetype == "all" ? `my-3` : `my-3 hidden`}>
+                           <label className="text-text-light-primary dark:text-text-dark-primary">Space:</label>
+                           <select
+                              className="w-full disabled:opacity-50 p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm"
+                              value={`${activeSpaceType}-${activeSpaceId}`}
+                              name="type"
+                              disabled={true}
+                           >
+                              <option key={"all"} value={"all-all"} disabled>
+                                 Select Space
+                              </option>
+                              {
+                                 spaces.map((space) => {
+                                    return (
+                                       <option key={space.id} value={`${space.type}-${space.id}`}>
+                                          {space.name.split("_").join(" ")}
+                                       </option>
+                                    )
+                                 })
+                              }
 
+                           </select>
+                        </div>
+                        
                         {/* type */}
                         <div className="my-3">
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Type:</label>
@@ -789,7 +857,7 @@ function Schedule() {
                         </div>
 
                         {/* p category */}
-                        <div className={inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE ? `my-3` : `my-3 hidden`}>
+                        <div className={inputs.type != "" ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
@@ -797,9 +865,9 @@ function Schedule() {
                               name={"pcategory"}
                               disabled={true}
                            >
-                              {categories.map((c) => {
+                              {categories.filter(cat => inputs.pcategory && cat.parentCategoryId == inputs.pcategory).slice(0, 1)?.map((c) => {
                                  return (
-                                    <option key={c._id} value={c._id}>
+                                    <option key={c.parentCategoryId} value={c._id}>
                                        {c.parentCategory}
                                     </option>
                                  );
@@ -810,7 +878,7 @@ function Schedule() {
                         </div>
 
                         {/* sub category */}
-                        <div className={(inputs.type == TransactionType.EXPENSE || inputs.type == TransactionType.INCOME || inputs.type == TransactionType.PURCHASE) && inputs.pcategory != null ? `my-3` : `my-3 hidden`}>
+                        <div className={inputs.type != "" && inputs.pcategory ? `my-3` : `my-3 hidden`}>
                            <label className="text-text-light-primary dark:text-text-dark-primary font-bold">Sub Category:</label>
                            <select
                               className="w-full p-3 my-3 border border-border-light-primary dark:border-border-dark-primary rounded-md bg-bg-light-primary dark:bg-bg-dark-primary text-text-light-primary dark:text-text-dark-primary focus:border-primary text-sm disabled:opacity-50"
@@ -822,10 +890,10 @@ function Schedule() {
                                  Select sub category
                               </option>
                               {
-                                 categories.find(cat => cat._id === inputs.pcategory)?.subCategories.map(c => {
+                                 categories.map(c => {
                                     return (
-                                       <option value={c._id}>
-                                          {c.name}
+                                       <option value={c.subCategoryId}>
+                                          {c.subCategoryName}
                                        </option>
                                     )
                                  })

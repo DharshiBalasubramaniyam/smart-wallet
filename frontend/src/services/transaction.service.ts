@@ -11,7 +11,7 @@ export function TransactionService() {
     async function createTransaction(body: TransactionInfo): Promise<any> {
         try {
             console.log(body)
-            const response = await api.post(`transaction/`, body, {
+            const response = await api.post(`finops/transaction/`, body, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -27,7 +27,7 @@ export function TransactionService() {
     async function editTransaction(id: string, body: TransactionInfo): Promise<any> {
         try {
             console.log(body)
-            const response = await api.put(`transaction/${id}`, body, {
+            const response = await api.put(`finops/transaction/${id}`, body, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
@@ -44,14 +44,14 @@ export function TransactionService() {
 
     async function deleteTransaction(id: string): Promise<any> {
         try {
-            const response = await api.delete(`transaction/${id}`, {
+            const response = await api.delete(`finops/transaction/${id}`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
             });
             if (response.data.success) {
                 console.log(response.data)
-                toast.success(response.data.data.message)
+                toast.success(response.data.message)
             }
         } catch (error) {
             processError(error)
@@ -60,7 +60,7 @@ export function TransactionService() {
 
     async function getTransactionsByUser(spaceid: string, limit: number, skip: number): Promise<any> {
         try {
-            const response = await api.get(`transaction/user/${spaceid}/${limit}/${skip}`, {
+            const response = await api.get(`finops/transaction/user/${spaceid}/${limit}/${skip}`, {
                 headers: {
                     "authorization": `Bearer ${token}`
                 }
