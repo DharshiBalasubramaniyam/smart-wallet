@@ -17,6 +17,7 @@ export enum SpaceType {
    CREDIT_CARD = 'CREDIT_CARD',
    LOAN_LENT = 'LOAN_LENT',
    LOAN_BORROWED = 'LOAN_BORROWED',
+   SAVING_GOAL = 'SAVING_GOAL'
 }
 
 function Spaces({ onCancel, editSpaceId, summary }: { onCancel: () => void, editSpaceId?: string | null, summary?: any }) {
