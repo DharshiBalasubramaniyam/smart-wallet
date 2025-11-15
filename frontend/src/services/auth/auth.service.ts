@@ -213,11 +213,13 @@ export function AuthService() {
 
     const logOut = async () => {
         try {
-            const response = await api.post(`user/auth/logout`, {}, { withCredentials: true }); // Send refresh token via cookie
+            const response = await api.post(`user/auth/logout`, {}, { withCredentials: true }); 
             dispatch(logout());
+            navigate("/login")
         } catch (error) {
             console.log(error)
             dispatch(logout());
+            navigate("/login")
         }
     };
 
