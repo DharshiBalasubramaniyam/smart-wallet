@@ -4,7 +4,7 @@ import { MailOptions } from '../interfaces/requests';
 
 const emailRouter = express.Router();
 
-emailRouter.post('/email/send', async (req: Request, res: Response) => {
+emailRouter.post('/send', async (req: Request, res: Response) => {
     try {
         // const userId: string = (req as any).user.id;
 
