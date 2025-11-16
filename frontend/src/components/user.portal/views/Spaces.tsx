@@ -34,6 +34,9 @@ function Spaces({ onCancel, editSpaceId, summary }: { onCancel: () => void, edit
       creditCardLimit: 0.0,
       statementDate: null,
       dueDate: null,
+      targetAmount: 0,
+      savedAlready: 0,
+      desiredDate: null,
       from: null,
       to: null
    });

@@ -21,7 +21,9 @@ export interface ISpace extends Document {
    creditCardLimit: Schema.Types.Decimal128
    creditCardStatementDate: Schema.Types.Date,
    creditCardDueDate: Schema.Types.Date,
-   color: string
+   color: string,
+   targetAmount: Schema.Types.Decimal128,
+   desiredDate: Schema.Types.Date,
    // collaborators: IUser[]
 }
 
@@ -43,6 +45,8 @@ const SpaceSchema: Schema = new Schema({
    // description: { type: String },
    // isIndividual: { type: Boolean },
    isDefault: { type: Boolean, default: false },
+   targetAmount: { type: Schema.Types.Decimal128},
+   desiredDate: { type: Schema.Types.Date},
    // collaborators: {type: []}
 }, {
    timestamps: true
